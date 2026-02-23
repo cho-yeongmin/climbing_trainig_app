@@ -1,0 +1,170 @@
+/* 장소 선택 페이지 (Figma) */
+
+.location-select {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.location-select__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.location-select__panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.location-select__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #202124;
+  margin: 0 0 1.25rem;
+  padding-top: 1.25rem;
+  background: #fff;
+}
+
+/* 검색창: 연한 회색, 둥근 모서리, 돋보기 아이콘 */
+.location-select__search-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #f1f3f4;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.location-select__search-icon {
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #5f6368;
+  flex-shrink: 0;
+}
+
+.location-select__search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: #202124;
+  background: none;
+  border: none;
+}
+
+.location-select__search-input::placeholder {
+  color: #5f6368;
+}
+
+.location-select__search-input:focus {
+  outline: none;
+}
+
+/* 최근 검색 섹션 */
+.location-select__recent-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #202124;
+  margin: 0 0 0.75rem;
+}
+
+.location-select__recent-empty {
+  font-size: 0.875rem;
+  color: #5f6368;
+  margin: 0;
+  padding: 1rem 0;
+}
+
+.location-select__recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #e8eaed;
+}
+
+.location-select__recent-list li {
+  border-bottom: 1px solid #e8eaed;
+}
+
+.location-select__recent-list li:last-child {
+  border-bottom: none;
+}
+
+/* 장소 항목: 파란 사각형 아이콘 + 이름 + 주소 */
+.location-select__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 0;
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.location-select__item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.location-select__item:focus {
+  outline: none;
+}
+
+.location-select__item:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
+.location-select__item-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  background: #4285f4;
+  border-radius: 8px;
+}
+
+.location-select__item-thumb {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.location-select__item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.location-select__item-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.location-select__item-address {
+  font-size: 0.8125rem;
+  color: #5f6368;
+}

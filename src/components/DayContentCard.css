@@ -1,0 +1,384 @@
+.day-card {
+  padding: 1.25rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f3f4;
+}
+
+@media (min-width: 480px) {
+  .day-card {
+    padding: 1.5rem;
+    border-radius: 14px;
+  }
+}
+
+.day-card__sub {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
+.day-card__title {
+  margin: 0 0 0.375rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #202124;
+  line-height: 1.3;
+}
+
+@media (min-width: 480px) {
+  .day-card__title {
+    font-size: 1.25rem;
+  }
+}
+
+.day-card__date {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
+.day-card__date--address {
+  margin-top: 0.25rem;
+}
+
+/* 다가오는 원정 D-day: D-day 뱃지 */
+.day-card--dday .day-card__dday-badge {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4285f4;
+}
+
+.day-card--dday .day-card__no-expedition {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #5f6368;
+}
+
+.day-card__text {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #202124;
+  line-height: 1.5;
+}
+
+.day-card__highlight {
+  color: #4285f4;
+  font-weight: 600;
+}
+
+/* 손가락훈련하는 날: 세트 버튼 + 저장하기 */
+.day-card--training-sets .day-card__text {
+  margin-bottom: 1rem;
+}
+
+.day-card__sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.day-card__set-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 0.625rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #202124;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.day-card__set-btn:hover {
+  border-color: #b0b4b8;
+}
+
+.day-card__set-btn--active {
+  background: #4285f4;
+  color: #fff;
+  border-color: #4285f4;
+}
+
+.day-card__save-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.day-card__save-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #4285f4;
+  background: #fff;
+  border: 1px solid #4285f4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.day-card__save-btn:hover {
+  background: #4285f4;
+  color: #fff;
+}
+
+/* 파워볼더링: 1set~4set 옆 사각형 완료 표시 */
+.day-card--training-sets-squares .day-card__text {
+  margin-bottom: 1rem;
+}
+
+.day-card__set-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.day-card__set-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.day-card__set-rows .day-card__set-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.day-card__set-label {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #202124;
+  min-width: 3.5rem;
+}
+
+.day-card__squares {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.day-card__square {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.day-card__square:hover {
+  border-color: #b0b4b8;
+}
+
+.day-card__square--active {
+  background: #4285f4;
+  border-color: #4285f4;
+}
+
+.day-card__squares--readonly .day-card__square {
+  cursor: default;
+  pointer-events: none;
+}
+
+.day-card--previous-records .day-card__list-title {
+  margin-bottom: 1rem;
+}
+
+/* 휴식/유산소: 가벼운 유산소·가벼운 스트레칭 왼쪽 사각형 완료 표시 */
+.day-card--checklist .day-card__text {
+  margin-bottom: 1rem;
+}
+
+.day-card__checklist-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.day-card__checklist-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.day-card__checklist-square {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.day-card__checklist-square:hover {
+  border-color: #b0b4b8;
+}
+
+.day-card__checklist-square--active {
+  background: #4285f4;
+  border-color: #4285f4;
+}
+
+.day-card__checklist-label {
+  font-size: 0.9375rem;
+  color: #202124;
+  line-height: 1.4;
+}
+
+.day-card__reps-only-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.day-card__reps-only-input {
+  width: 3.5rem;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #202124;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.day-card__reps-only-input:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+/* 휴식/보강운동: 항목 + 1~4세트 중량·횟수 입력 */
+.day-card--rest-strength .day-card__text {
+  margin-bottom: 1rem;
+}
+
+.day-card__rest-strength-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.day-card__rest-strength-item {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.day-card__rest-strength-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.day-card__set-inputs {
+  margin-top: 0.5rem;
+  margin-left: calc(28px + 0.75rem);
+}
+
+.day-card__set-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.day-card__set-input-row:last-child {
+  margin-bottom: 0;
+}
+
+.day-card__set-input-label {
+  font-size: 0.875rem;
+  color: #202124;
+  min-width: 3.5rem;
+}
+
+.day-card__set-input {
+  width: 3rem;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #202124;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.day-card__set-input:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+.day-card__set-input-unit {
+  font-size: 0.875rem;
+  color: #5f6368;
+}
+
+.day-card__checklist-square--readonly {
+  pointer-events: none;
+  cursor: default;
+}
+
+.day-card__set-value {
+  font-size: 0.875rem;
+  color: #202124;
+}
+
+.day-card__set-inputs--readonly .day-card__set-input-row {
+  gap: 0.25rem;
+}
+
+.day-card--previous-records-strength .day-card__list-title {
+  margin-bottom: 1rem;
+}
+
+/* 운동방법 카드 */
+.day-card__detail {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #202124;
+  line-height: 1.5;
+}
+
+.day-card__list-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.day-card__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.day-card__list-item {
+  margin-bottom: 0.375rem;
+  font-size: 0.9375rem;
+  color: #202124;
+}
+
+.day-card__list-item:last-child {
+  margin-bottom: 0;
+}
+
+.day-card__description {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #5f6368;
+  line-height: 1.5;
+}
