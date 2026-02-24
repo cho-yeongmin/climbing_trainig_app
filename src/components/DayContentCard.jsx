@@ -4,10 +4,12 @@ import './DayContentCard.css'
 
 /**
  * 1 set ~ n set 버튼: 각 세트를 해냈는지 표시. 누른 버튼만 파란색 유지, 기본 선택 없음.
+ * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function TrainingSetsBlock({ card, onSave }) {
-  const [completedSets, setCompletedSets] = useState(() => new Set())
+function TrainingSetsBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
   const count = card.setCount ?? 5
+  const initialSets = Array.isArray(savedPayload?.completedSets) ? new Set(savedPayload.completedSets) : new Set()
+  const [completedSets, setCompletedSets] = useState(() => initialSets)
 
   const toggleSet = (n) => {
     setCompletedSets((prev) => {
@@ -16,6 +18,39 @@ function TrainingSetsBlock({ card, onSave }) {
       else next.add(n)
       return next
     })
+  }
+
+  if (isSaved) {
+    const savedSet = new Set(savedPayload?.completedSets ?? [])
+    return (
+      <article className="day-card day-card--training-sets">
+        <p className="day-card__text">
+          {card.message?.split(card.highlight).map((part, i, arr) => (
+            <span key={i}>
+              {part}
+              {i < arr.length - 1 && (
+                <strong className="day-card__highlight">{card.highlight}</strong>
+              )}
+            </span>
+          ))}
+        </p>
+        <div className="day-card__sets day-card__sets--readonly" role="group" aria-label="세트 완료 표시">
+          {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
+            <span
+              key={n}
+              className={`day-card__set-btn day-card__set-btn--readonly ${savedSet.has(n) ? 'day-card__set-btn--active' : ''}`}
+            >
+              {n} set
+            </span>
+          ))}
+        </div>
+        <div className="day-card__save-wrap">
+          <button type="button" className="day-card__edit-btn" onClick={onEdit}>
+            수정
+          </button>
+        </div>
+      </article>
+    )
   }
 
   return (
@@ -58,16 +93,26 @@ function TrainingSetsBlock({ card, onSave }) {
 
 /**
  * 파워볼더링: 1set~4set 각각 옆에 사각형 N개. 사각형 클릭 시 완료 표시(파란색) 토글.
+ * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function TrainingSetsSquaresBlock({ card, onSave }) {
+function TrainingSetsSquaresBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
   const setCount = card.setCount ?? 4
   const squaresPerSet = card.squaresPerSet ?? 4
 
-  const [completed, setCompleted] = useState(() => {
+  const getInitialCompleted = () => {
+    if (savedPayload && typeof savedPayload === 'object' && !Array.isArray(savedPayload)) {
+      const init = {}
+      for (let s = 1; s <= setCount; s++) {
+        const arr = savedPayload[s]
+        init[s] = Array.isArray(arr) ? arr.map(Boolean) : Array(squaresPerSet).fill(false)
+      }
+      return init
+    }
     const init = {}
     for (let s = 1; s <= setCount; s++) init[s] = Array(squaresPerSet).fill(false)
     return init
-  })
+  }
+  const [completed, setCompleted] = useState(getInitialCompleted)
 
   const toggle = (setNum, squareIdx) => {
     setCompleted((prev) => {
@@ -76,6 +121,44 @@ function TrainingSetsSquaresBlock({ card, onSave }) {
       next[setNum][squareIdx] = !next[setNum][squareIdx]
       return next
     })
+  }
+
+  if (isSaved) {
+    const records = savedPayload && typeof savedPayload === 'object' ? savedPayload : {}
+    return (
+      <article className="day-card day-card--training-sets-squares">
+        <p className="day-card__text">
+          {card.message?.split(card.highlight).map((part, i, arr) => (
+            <span key={i}>
+              {part}
+              {i < arr.length - 1 && (
+                <strong className="day-card__highlight">{card.highlight}</strong>
+              )}
+            </span>
+          ))}
+        </p>
+        <div className="day-card__set-rows" role="group" aria-label="세트별 완료 표시">
+          {Array.from({ length: setCount }, (_, i) => i + 1).map((setNum) => (
+            <div key={setNum} className="day-card__set-row">
+              <span className="day-card__set-label">{setNum}set</span>
+              <div className="day-card__squares day-card__squares--readonly">
+                {Array.from({ length: squaresPerSet }, (_, j) => (
+                  <span
+                    key={j}
+                    className={`day-card__square day-card__square--readonly ${records[setNum]?.[j] ? 'day-card__square--active' : ''}`}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="day-card__save-wrap">
+          <button type="button" className="day-card__edit-btn" onClick={onEdit}>
+            수정
+          </button>
+        </div>
+      </article>
+    )
   }
 
   return (
@@ -155,10 +238,14 @@ function PreviousRecordsBlock({ card }) {
 
 /**
  * 휴식/유산소: 메시지 + 항목별 왼쪽 사각형 완료 표시. 사각형 클릭 시 파란색 토글.
+ * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function ChecklistBlock({ card, onSave }) {
+function ChecklistBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
   const items = card.items ?? []
-  const [completed, setCompleted] = useState(() => items.map(() => false))
+  const savedCompleted = Array.isArray(savedPayload?.completed) ? savedPayload.completed : []
+  const [completed, setCompleted] = useState(() =>
+    savedCompleted.length >= items.length ? savedCompleted : items.map(() => false)
+  )
 
   const toggle = (index) => {
     setCompleted((prev) => {
@@ -166,6 +253,39 @@ function ChecklistBlock({ card, onSave }) {
       next[index] = !next[index]
       return next
     })
+  }
+
+  if (isSaved) {
+    const displayCompleted = savedCompleted.length >= items.length ? savedCompleted : items.map(() => false)
+    return (
+      <article className="day-card day-card--checklist">
+        <p className="day-card__text">
+          {card.message?.split(card.highlight).map((part, i, arr) => (
+            <span key={i}>
+              {part}
+              {i < arr.length - 1 && (
+                <strong className="day-card__highlight">{card.highlight}</strong>
+              )}
+            </span>
+          ))}
+        </p>
+        <div className="day-card__checklist-rows day-card__checklist-rows--readonly" role="group" aria-label="항목 완료 표시">
+          {items.map((label, index) => (
+            <div key={index} className="day-card__checklist-row">
+              <span
+                className={`day-card__checklist-square day-card__checklist-square--readonly ${displayCompleted[index] ? 'day-card__checklist-square--active' : ''}`}
+              />
+              <span className="day-card__checklist-label">{label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="day-card__save-wrap">
+          <button type="button" className="day-card__edit-btn" onClick={onEdit}>
+            수정
+          </button>
+        </div>
+      </article>
+    )
   }
 
   return (
@@ -209,24 +329,31 @@ function ChecklistBlock({ card, onSave }) {
 
 /**
  * 휴식/보강운동: 덤벨숄더프레스·푸쉬업·모빌리티 스트레칭 완료 사각형 + (항목별) 1~4세트 중량·횟수 입력
+ * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function RestStrengthBlock({ card, onSave }) {
+function RestStrengthBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
   const items = card.items ?? []
+  const savedItems = Array.isArray(savedPayload?.items) ? savedPayload.items : []
 
-  const [completed, setCompleted] = useState(() => items.map(() => false))
-
-  const getInitialSetData = (item) => {
+  const getInitialSetData = (item, savedItem) => {
+    if (savedItem?.sets && Array.isArray(savedItem.sets)) return savedItem.sets
     if (!item.setCount) return null
     const w = item.defaultWeight ?? '3'
     const r = item.defaultReps ?? '10'
     return Array.from({ length: item.setCount }, () => ({ weight: w, reps: r }))
   }
+  const getInitialCompleted = () => {
+    if (savedItems.length >= items.length) return savedItems.map((s) => !!s.completed)
+    return items.map(() => false)
+  }
+  const getInitialRepsOnly = () =>
+    items.map((item, i) => (item.repsOnly ? (savedItems[i]?.reps ?? item.defaultReps ?? '') : null))
+
+  const [completed, setCompleted] = useState(getInitialCompleted)
   const [setData, setSetData] = useState(() =>
-    items.map((item) => getInitialSetData(item))
+    items.map((item, i) => getInitialSetData(item, savedItems[i]))
   )
-  const [repsOnlyData, setRepsOnlyData] = useState(() =>
-    items.map((item) => (item.repsOnly ? (item.defaultReps ?? '') : null))
-  )
+  const [repsOnlyData, setRepsOnlyData] = useState(getInitialRepsOnly)
 
   const toggleCompleted = (index) => {
     setCompleted((prev) => {
@@ -234,6 +361,63 @@ function RestStrengthBlock({ card, onSave }) {
       next[index] = !next[index]
       return next
     })
+  }
+
+  if (isSaved && savedItems.length >= items.length) {
+    const displayItems = items.map((item, i) => {
+      const s = savedItems[i] ?? {}
+      return {
+        ...item,
+        completed: !!s.completed,
+        sets: s.sets ?? [],
+        reps: s.reps,
+      }
+    })
+    return (
+      <article className="day-card day-card--rest-strength">
+        <p className="day-card__text">
+          {card.message?.split(card.highlight).map((part, i, arr) => (
+            <span key={i}>
+              {part}
+              {i < arr.length - 1 && (
+                <strong className="day-card__highlight">{card.highlight}</strong>
+              )}
+            </span>
+          ))}
+        </p>
+        <div className="day-card__rest-strength-list day-card__rest-strength-list--readonly" role="group" aria-label="운동 항목 완료 표시">
+          {displayItems.map((dItem, itemIndex) => (
+            <div key={itemIndex} className="day-card__rest-strength-item">
+              <div className="day-card__checklist-row">
+                <span
+                  className={`day-card__checklist-square day-card__checklist-square--readonly ${dItem.completed ? 'day-card__checklist-square--active' : ''}`}
+                />
+                <span className="day-card__checklist-label">{dItem.label}</span>
+                {dItem.reps != null && dItem.reps !== '' && (
+                  <span className="day-card__set-value">{dItem.reps}회</span>
+                )}
+              </div>
+              {dItem.sets?.length > 0 && (
+                <div className="day-card__set-inputs day-card__set-inputs--readonly">
+                  {dItem.sets.map((row, setIndex) => (
+                    <div key={setIndex} className="day-card__set-input-row">
+                      <span className="day-card__set-input-label">{setIndex + 1}세트</span>
+                      <span className="day-card__set-value">{row.weight}kg</span>
+                      <span className="day-card__set-value">{row.reps}회</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="day-card__save-wrap">
+          <button type="button" className="day-card__edit-btn" onClick={onEdit}>
+            수정
+          </button>
+        </div>
+      </article>
+    )
   }
 
   const updateSetValue = (itemIndex, setIndex, field, value) => {
@@ -454,6 +638,9 @@ export default function DayContentCard({
   nextExpeditionLoading,
   onSave,
   saveContext,
+  todayRecord,
+  isEditingRecord,
+  onEditRecord,
 }) {
   if (!card) return null
 
@@ -482,40 +669,67 @@ export default function DayContentCard({
         </article>
       )
 
-    case CARD_TYPES.TRAINING_SETS:
+    case CARD_TYPES.TRAINING_SETS: {
+      const isSaved =
+        !isEditingRecord && todayRecord?.detailType === 'training_sets'
       return (
         <TrainingSetsBlock
+          key={`training-sets-${isSaved ? 'saved' : 'edit'}`}
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
+          onEdit={onEditRecord}
+          isSaved={isSaved}
+          savedPayload={todayRecord?.detailType === 'training_sets' ? todayRecord?.payload : undefined}
         />
       )
+    }
 
-    case CARD_TYPES.TRAINING_SETS_SQUARES:
+    case CARD_TYPES.TRAINING_SETS_SQUARES: {
+      const isSaved =
+        !isEditingRecord && todayRecord?.detailType === 'training_sets_squares'
       return (
         <TrainingSetsSquaresBlock
+          key={`training-sets-squares-${isSaved ? 'saved' : 'edit'}`}
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
+          onEdit={onEditRecord}
+          isSaved={isSaved}
+          savedPayload={todayRecord?.detailType === 'training_sets_squares' ? todayRecord?.payload : undefined}
         />
       )
+    }
 
     case CARD_TYPES.PREVIOUS_RECORDS:
       return <PreviousRecordsBlock card={card} />
 
-    case CARD_TYPES.CHECKLIST:
+    case CARD_TYPES.CHECKLIST: {
+      const isSaved = !isEditingRecord && todayRecord?.detailType === 'checklist'
       return (
         <ChecklistBlock
+          key={`checklist-${isSaved ? 'saved' : 'edit'}`}
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
+          onEdit={onEditRecord}
+          isSaved={isSaved}
+          savedPayload={todayRecord?.detailType === 'checklist' ? todayRecord?.payload : undefined}
         />
       )
+    }
 
-    case CARD_TYPES.REST_STRENGTH_EXERCISES:
+    case CARD_TYPES.REST_STRENGTH_EXERCISES: {
+      const isSaved =
+        !isEditingRecord && todayRecord?.detailType === 'rest_strength_exercises'
       return (
         <RestStrengthBlock
+          key={`rest-strength-${isSaved ? 'saved' : 'edit'}`}
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
+          onEdit={onEditRecord}
+          isSaved={isSaved}
+          savedPayload={todayRecord?.detailType === 'rest_strength_exercises' ? todayRecord?.payload : undefined}
         />
       )
+    }
 
     case CARD_TYPES.PREVIOUS_RECORDS_STRENGTH:
       return <PreviousRecordsStrengthBlock card={card} />

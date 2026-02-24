@@ -251,6 +251,49 @@ export function useTodaySchedule() {
   return { data, loading }
 }
 
+// 오늘의 훈련 기록 조회 (날짜 + 운동유형 기준)
+export function useTodayTrainingRecord(userId, recordDate, exerciseTypeId) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const dateStr = recordDate
+    ? (typeof recordDate === 'string'
+      ? recordDate
+      : recordDate.toISOString().slice(0, 10))
+    : null
+
+  const refetch = useCallback(() => {
+    if (!userId || !dateStr || !exerciseTypeId) {
+      setData(null)
+      setLoading(false)
+      return Promise.resolve()
+    }
+    setLoading(true)
+    return supabase
+      .from('training_records')
+      .select(`
+        id,
+        training_record_details(detail_type, payload)
+      `)
+      .eq('user_id', userId)
+      .eq('record_date', dateStr)
+      .eq('exercise_type_id', exerciseTypeId)
+      .maybeSingle()
+      .then(({ data: row }) => {
+        const details = row?.training_record_details ?? []
+        const detail = Array.isArray(details) ? details[0] : details
+        setData(detail ? { detailType: detail.detail_type, payload: detail.payload ?? {} } : null)
+        setLoading(false)
+      })
+  }, [userId, dateStr, exerciseTypeId])
+
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+
+  return { data, loading, refetch }
+}
+
 // 훈련 기록 저장
 export async function saveTrainingRecord({
   userId,

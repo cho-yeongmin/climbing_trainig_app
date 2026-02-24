@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useNextExpedition, useExerciseTypes, useTodaySchedule, saveTrainingRecord } from '../hooks/useSupabase'
+import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, saveTrainingRecord } from '../hooks/useSupabase'
 import { getDayContentByType } from '../data/dayContent'
 import DayContentCard from './DayContentCard'
 import ScheduleView from './ScheduleView'
@@ -43,6 +43,14 @@ export default function HomeScreen() {
     }
   }, [user?.id, exerciseType?.id, todaySchedule?.id])
 
+  const { data: todayRecord, refetch: refetchTodayRecord } = useTodayTrainingRecord(
+    user?.id,
+    saveContext?.recordDate,
+    exerciseType?.id
+  )
+
+  const [isEditingRecord, setIsEditingRecord] = useState(false)
+
   const handleSaveRecord = useCallback(
     async (payload, detailType) => {
       if (!saveContext) return
@@ -52,13 +60,15 @@ export default function HomeScreen() {
           detailType,
           payload,
         })
+        await refetchTodayRecord()
+        setIsEditingRecord(false)
         alert('저장되었습니다.')
       } catch (err) {
         console.error(err)
         alert('저장에 실패했습니다.')
       }
     },
-    [saveContext]
+    [saveContext, refetchTodayRecord]
   )
 
   return (
@@ -101,6 +111,9 @@ export default function HomeScreen() {
                 nextExpeditionLoading={card.type === 'dday' ? nextExpeditionLoading : false}
                 onSave={handleSaveRecord}
                 saveContext={saveContext}
+                todayRecord={todayRecord}
+                isEditingRecord={isEditingRecord}
+                onEditRecord={() => setIsEditingRecord(true)}
               />
             ))}
           </div>

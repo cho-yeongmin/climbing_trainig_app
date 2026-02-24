@@ -161,6 +161,30 @@
   color: #fff;
 }
 
+/* 수정 버튼: 저장 버튼과 동일한 스타일 */
+.day-card__edit-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #4285f4;
+  background: #fff;
+  border: 1px solid #4285f4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.day-card__edit-btn:hover {
+  background: #4285f4;
+  color: #fff;
+}
+
+.day-card__set-btn--readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
 /* 파워볼더링: 1set~4set 옆 사각형 완료 표시 */
 .day-card--training-sets-squares .day-card__text {
   margin-bottom: 1rem;
@@ -218,7 +242,8 @@
   border-color: #4285f4;
 }
 
-.day-card__squares--readonly .day-card__square {
+.day-card__squares--readonly .day-card__square,
+.day-card__square--readonly {
   cursor: default;
   pointer-events: none;
 }
