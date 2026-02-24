@@ -88,6 +88,7 @@ export default function ScheduleView() {
     const endX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX
     const diff = swipeStartX.current - endX
     if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+      e.stopPropagation() // 탭 스와이프와 충돌 방지
       if (diff > 0) goNextMonth()
       else goPrevMonth()
     }
@@ -109,6 +110,7 @@ export default function ScheduleView() {
         onMouseUp={(e) => {
           const diff = swipeStartX.current - e.clientX
           if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+            e.stopPropagation()
             if (diff > 0) goNextMonth()
             else goPrevMonth()
           }

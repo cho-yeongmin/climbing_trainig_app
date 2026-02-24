@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, useLatestTrainingRecord, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
 import { getDayContentByType } from '../data/dayContent'
@@ -15,9 +15,35 @@ const TABS = [
   { id: 'spraywall', label: '스프레이월' },
 ]
 
+const SWIPE_THRESHOLD = 50
+
 export default function HomeScreen() {
   const { logout, user } = useAuth()
   const [activeTab, setActiveTab] = useState('home')
+  const swipeStartX = useRef(0)
+
+  const tabIds = TABS.map((t) => t.id)
+  const currentIndex = tabIds.indexOf(activeTab)
+
+  const goPrevTab = useCallback(() => {
+    if (currentIndex > 0) setActiveTab(tabIds[currentIndex - 1])
+  }, [currentIndex, tabIds])
+
+  const goNextTab = useCallback(() => {
+    if (currentIndex < tabIds.length - 1) setActiveTab(tabIds[currentIndex + 1])
+  }, [currentIndex, tabIds])
+
+  const handleSwipeStart = (e) => {
+    swipeStartX.current = e.touches ? e.touches[0].clientX : e.clientX
+  }
+  const handleSwipeEnd = (e) => {
+    const endX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX
+    const diff = swipeStartX.current - endX
+    if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+      if (diff > 0) goNextTab()
+      else goPrevTab()
+    }
+  }
 
   const { data: nextExpedition, loading: nextExpeditionLoading } = useNextExpedition()
   const { data: exerciseTypes } = useExerciseTypes()
@@ -96,7 +122,19 @@ export default function HomeScreen() {
 
   return (
     <div className="home-screen">
-      <main className="home-screen__main">
+      <main
+        className="home-screen__main"
+        onTouchStart={handleSwipeStart}
+        onTouchEnd={handleSwipeEnd}
+        onMouseDown={(e) => { swipeStartX.current = e.clientX }}
+        onMouseUp={(e) => {
+          const diff = swipeStartX.current - e.clientX
+          if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+            if (diff > 0) goNextTab()
+            else goPrevTab()
+          }
+        }}
+      >
         <div className="home-screen__header">
           <h1 className="home-screen__title">클라이밍 잘하고 싶다</h1>
           <button
