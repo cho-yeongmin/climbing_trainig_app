@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { getTodayKST, toDateStringKST } from '../utils/date'
 
 // 운동 종류 목록
 export function useExerciseTypes() {
@@ -152,7 +153,7 @@ export function useNextExpedition() {
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = getTodayKST()
     setLoading(true)
     supabase
       .from('schedules')
@@ -189,17 +190,17 @@ export function useNextExpedition() {
 function normalizeNextExpedition(row) {
   const dateStr = row.date
   const place = row.places
-  const d = new Date(dateStr + 'T00:00:00')
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  d.setHours(0, 0, 0, 0)
+  const todayKST = getTodayKST()
+  const d = new Date(dateStr + 'T00:00:00+09:00') // KST 자정
+  const today = new Date(todayKST + 'T00:00:00+09:00') // KST 자정
   const diffMs = d - today
   const daysUntil = Math.round(diffMs / (24 * 60 * 60 * 1000))
   const weekdays = ['일', '월', '화', '수', '목', '금', '토']
-  const y = d.getFullYear().toString().slice(-2)
-  const m = d.getMonth() + 1
-  const day = d.getDate()
-  const week = weekdays[d.getDay()]
+  const [yFull, mNum, dayNum] = dateStr.split('-').map(Number)
+  const y = yFull.toString().slice(-2)
+  const m = mNum
+  const day = dayNum
+  const week = weekdays[new Date(yFull, mNum - 1, dayNum).getDay()]
   const dateLabel = `${y}년 ${m}월 ${day}일 ${week}요일`
   return {
     date: dateStr,
@@ -210,13 +211,13 @@ function normalizeNextExpedition(row) {
   }
 }
 
-// 오늘 일정
+// 오늘 일정 (한국 시간 기준)
 export function useTodaySchedule() {
-  const today = new Date().toISOString().slice(0, 10)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
+    const today = getTodayKST()
     setLoading(true)
     supabase
       .from('schedules')
@@ -234,10 +235,16 @@ export function useTodaySchedule() {
         setData(row)
         setLoading(false)
       })
-  }, [today])
+  }, [])
 
   useEffect(() => {
     refetch()
+  }, [refetch])
+
+  // 자정 경과 시 날짜 갱신 (1분마다 체크)
+  useEffect(() => {
+    const id = setInterval(refetch, 60000)
+    return () => clearInterval(id)
   }, [refetch])
 
   useEffect(() => {
@@ -256,11 +263,7 @@ export function useTodayTrainingRecord(userId, recordDate, exerciseTypeId) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const dateStr = recordDate
-    ? (typeof recordDate === 'string'
-      ? recordDate
-      : recordDate.toISOString().slice(0, 10))
-    : null
+  const dateStr = toDateStringKST(recordDate)
 
   const refetch = useCallback(() => {
     if (!userId || !dateStr || !exerciseTypeId) {
@@ -300,8 +303,8 @@ export function useLatestTrainingRecord(userId, exerciseTypeId, beforeDate = nul
   const [loading, setLoading] = useState(true)
 
   const beforeDateStr = beforeDate
-    ? (typeof beforeDate === 'string' ? beforeDate : beforeDate.toISOString().slice(0, 10))
-    : new Date().toISOString().slice(0, 10)
+    ? toDateStringKST(beforeDate)
+    : getTodayKST()
 
   useEffect(() => {
     if (!userId || !exerciseTypeId) {
@@ -343,9 +346,7 @@ export async function saveTrainingRecord({
   detailType,
   payload,
 }) {
-  const dateStr = typeof recordDate === 'string'
-    ? recordDate
-    : recordDate.toISOString().slice(0, 10)
+  const dateStr = toDateStringKST(recordDate)
 
   const { data: record, error: recordError } = await supabase
     .from('training_records')
@@ -381,9 +382,7 @@ export async function saveTrainingRecord({
 
 // 오늘 훈련 기록 삭제
 export async function deleteTodayTrainingRecord({ userId, recordDate, exerciseTypeId }) {
-  const dateStr = typeof recordDate === 'string'
-    ? recordDate
-    : recordDate.toISOString().slice(0, 10)
+  const dateStr = toDateStringKST(recordDate)
 
   const { error } = await supabase
     .from('training_records')
