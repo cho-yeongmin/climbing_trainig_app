@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { CARD_TYPES } from '../data/dayTypes'
 import './DayContentCard.css'
 
@@ -388,6 +388,59 @@ function PreviousRecordsStrengthBlock({ card }) {
 }
 
 /**
+ * 다가오는 원정 D-day 카드
+ * - '다가오는 원정 D-day' 텍스트 제거
+ * - 주소 클릭 시 클립보드 복사
+ */
+function DdayCard({ nextExpeditionLoading, nextExpedition }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyAddress = useCallback(() => {
+    if (!nextExpedition?.placeAddress) return
+    navigator.clipboard.writeText(nextExpedition.placeAddress).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }).catch(() => {})
+  }, [nextExpedition?.placeAddress])
+
+  return (
+    <article className="day-card day-card--dday">
+      {nextExpeditionLoading ? (
+        <p className="day-card__no-expedition">로딩 중...</p>
+      ) : nextExpedition == null ? (
+        <p className="day-card__no-expedition">정해진 다음 원정 계획이 없습니다.</p>
+      ) : (
+        <>
+          <p className="day-card__dday-badge">
+            {nextExpedition.daysUntil === 0 ? 'D-day' : `D-${nextExpedition.daysUntil}`}
+          </p>
+          {nextExpedition.placeName && (
+            <h2 className="day-card__title">{nextExpedition.placeName}</h2>
+          )}
+          {nextExpedition.placeAddress && (
+            <button
+              type="button"
+              className="day-card__address-btn"
+              onClick={handleCopyAddress}
+              aria-label="주소 복사"
+              title="클릭하면 주소가 복사됩니다"
+            >
+              <span className="day-card__date day-card__date--address">
+                {nextExpedition.placeAddress}
+              </span>
+              {copied && <span className="day-card__copy-feedback">복사됨</span>}
+            </button>
+          )}
+          {nextExpedition.dateLabel && (
+            <p className="day-card__date">{nextExpedition.dateLabel}</p>
+          )}
+        </>
+      )}
+    </article>
+  )
+}
+
+/**
  * 백엔드에서 내려주는 카드 데이터(card)에 따라 카드 UI 렌더
  * card.type: dday | today_message | training_sets | training_sets_squares | previous_records | previous_records_strength | checklist | rest_strength_exercises | exercise_method | list | info
  * nextExpedition: DDAY 카드일 때만 전달. { dateLabel, daysUntil, placeName, placeAddress } 또는 null(미지정 시)
@@ -407,29 +460,10 @@ export default function DayContentCard({
   switch (card.type) {
     case CARD_TYPES.DDAY:
       return (
-        <article className="day-card day-card--dday">
-          {card.subtitle && <p className="day-card__sub">{card.subtitle}</p>}
-          {nextExpeditionLoading ? (
-            <p className="day-card__no-expedition">로딩 중...</p>
-          ) : nextExpedition == null ? (
-            <p className="day-card__no-expedition">정해진 다음 원정 계획이 없습니다.</p>
-          ) : (
-            <>
-              <p className="day-card__dday-badge">
-                {nextExpedition.daysUntil === 0 ? 'D-day' : `D-${nextExpedition.daysUntil}`}
-              </p>
-              {nextExpedition.placeName && (
-                <h2 className="day-card__title">{nextExpedition.placeName}</h2>
-              )}
-              {nextExpedition.placeAddress && (
-                <p className="day-card__date day-card__date--address">{nextExpedition.placeAddress}</p>
-              )}
-              {nextExpedition.dateLabel && (
-                <p className="day-card__date">{nextExpedition.dateLabel}</p>
-              )}
-            </>
-          )}
-        </article>
+        <DdayCard
+          nextExpeditionLoading={nextExpeditionLoading}
+          nextExpedition={nextExpedition}
+        />
       )
 
     case CARD_TYPES.TODAY_MESSAGE:

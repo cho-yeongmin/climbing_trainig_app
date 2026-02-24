@@ -43,6 +43,38 @@
   margin-top: 0.25rem;
 }
 
+/* 다가오는 원정 D-day: 주소 복사 버튼 */
+.day-card__address-btn {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.day-card__address-btn:hover {
+  text-decoration: underline;
+}
+
+.day-card__address-btn:focus {
+  outline: none;
+}
+
+.day-card__address-btn .day-card__date--address {
+  margin-top: 0.25rem;
+}
+
+.day-card__copy-feedback {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: #4285f4;
+}
+
 /* 다가오는 원정 D-day: D-day 뱃지 */
 .day-card--dday .day-card__dday-badge {
   margin: 0 0 0.5rem 0;
