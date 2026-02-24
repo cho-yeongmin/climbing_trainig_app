@@ -294,6 +294,46 @@ export function useTodayTrainingRecord(userId, recordDate, exerciseTypeId) {
   return { data, loading, refetch }
 }
 
+// 같은 운동 유형의 가장 최근 기록 조회 (오늘 제외)
+export function useLatestTrainingRecord(userId, exerciseTypeId, beforeDate = null) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const beforeDateStr = beforeDate
+    ? (typeof beforeDate === 'string' ? beforeDate : beforeDate.toISOString().slice(0, 10))
+    : new Date().toISOString().slice(0, 10)
+
+  useEffect(() => {
+    if (!userId || !exerciseTypeId) {
+      setData(null)
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    supabase
+      .from('training_records')
+      .select(`
+        id,
+        record_date,
+        training_record_details(detail_type, payload)
+      `)
+      .eq('user_id', userId)
+      .eq('exercise_type_id', exerciseTypeId)
+      .lt('record_date', beforeDateStr)
+      .order('record_date', { ascending: false })
+      .limit(1)
+      .then(({ data: rows }) => {
+        const row = Array.isArray(rows) ? rows[0] : rows
+        const details = row?.training_record_details ?? []
+        const detail = Array.isArray(details) ? details[0] : details
+        setData(detail ? { detailType: detail.detail_type, payload: detail.payload ?? {}, recordDate: row.record_date } : null)
+        setLoading(false)
+      })
+  }, [userId, exerciseTypeId, beforeDateStr])
+
+  return { data, loading }
+}
+
 // 훈련 기록 저장
 export async function saveTrainingRecord({
   userId,
@@ -337,6 +377,22 @@ export async function saveTrainingRecord({
   })
 
   return record
+}
+
+// 오늘 훈련 기록 삭제
+export async function deleteTodayTrainingRecord({ userId, recordDate, exerciseTypeId }) {
+  const dateStr = typeof recordDate === 'string'
+    ? recordDate
+    : recordDate.toISOString().slice(0, 10)
+
+  const { error } = await supabase
+    .from('training_records')
+    .delete()
+    .eq('user_id', userId)
+    .eq('record_date', dateStr)
+    .eq('exercise_type_id', exerciseTypeId)
+
+  if (error) throw error
 }
 
 // 운동로그: 사용자 훈련 기록을 종목별·날짜별 차트 데이터로 변환
@@ -421,4 +477,87 @@ export async function createSchedule({ date, exerciseTypeId, placeId }) {
     .single()
   if (error) throw error
   return data
+}
+
+// =====================================================
+// 스프레이월 (문제내기)
+// =====================================================
+
+export function useSprayWallProblems(userId, type = null) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const refetch = useCallback(() => {
+    if (!userId) {
+      setData([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    let q = supabase
+      .from('spray_wall_problems')
+      .select('id, name, type, image_data, tags, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    if (type && (type === 'bouldering' || type === 'endurance')) {
+      q = q.eq('type', type)
+    }
+    q.then(({ data: rows, error }) => {
+      if (error) {
+        console.error('spray wall fetch error:', error)
+        setData([])
+      } else {
+        setData((rows ?? []).map((r) => ({
+          ...r,
+          tags: Array.isArray(r.tags) ? r.tags : (r.tags ? JSON.parse(r.tags || '[]') : []),
+        })))
+      }
+      setLoading(false)
+    })
+  }, [userId, type])
+
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+
+  return { data, loading, refetch }
+}
+
+export async function saveSprayWallProblem({ userId, name, type, imageData, tags = [] }) {
+  const { data, error } = await supabase
+    .from('spray_wall_problems')
+    .insert({
+      user_id: userId,
+      name: name.trim(),
+      type,
+      image_data: imageData,
+      tags: Array.isArray(tags) ? tags : [],
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateSprayWallProblemTags(problemId, tags) {
+  const { data, error } = await supabase
+    .from('spray_wall_problems')
+    .update({
+      tags: Array.isArray(tags) ? tags : [],
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', problemId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteSprayWallProblem(problemId) {
+  const { error } = await supabase
+    .from('spray_wall_problems')
+    .delete()
+    .eq('id', problemId)
+  if (error) throw error
 }

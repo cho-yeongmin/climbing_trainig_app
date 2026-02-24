@@ -180,6 +180,35 @@
   color: #fff;
 }
 
+/* 삭제 버튼 */
+.day-card__delete-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #d93025;
+  background: #fff;
+  border: 1px solid #d93025;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.day-card__delete-btn:hover {
+  background: #d93025;
+  color: #fff;
+}
+
+/* 수정/삭제 버튼 나란히 */
+.day-card__save-wrap--actions {
+  gap: 0.5rem;
+}
+
+.day-card__save-wrap--actions .day-card__edit-btn,
+.day-card__save-wrap--actions .day-card__delete-btn {
+  margin-left: 0;
+}
+
 .day-card__set-btn--readonly {
   cursor: default;
   pointer-events: none;
@@ -250,6 +279,13 @@
 
 .day-card--previous-records .day-card__list-title {
   margin-bottom: 1rem;
+}
+
+.day-card__no-records {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #5f6368;
+  line-height: 1.5;
 }
 
 /* 휴식/유산소: 가벼운 유산소·가벼운 스트레칭 왼쪽 사각형 완료 표시 */

@@ -6,7 +6,7 @@ import './DayContentCard.css'
  * 1 set ~ n set 버튼: 각 세트를 해냈는지 표시. 누른 버튼만 파란색 유지, 기본 선택 없음.
  * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function TrainingSetsBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
+function TrainingSetsBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload }) {
   const count = card.setCount ?? 5
   const initialSets = Array.isArray(savedPayload?.completedSets) ? new Set(savedPayload.completedSets) : new Set()
   const [completedSets, setCompletedSets] = useState(() => initialSets)
@@ -44,9 +44,12 @@ function TrainingSetsBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
             </span>
           ))}
         </div>
-        <div className="day-card__save-wrap">
+        <div className="day-card__save-wrap day-card__save-wrap--actions">
           <button type="button" className="day-card__edit-btn" onClick={onEdit}>
             수정
+          </button>
+          <button type="button" className="day-card__delete-btn" onClick={onDelete}>
+            삭제
           </button>
         </div>
       </article>
@@ -95,7 +98,7 @@ function TrainingSetsBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
  * 파워볼더링: 1set~4set 각각 옆에 사각형 N개. 사각형 클릭 시 완료 표시(파란색) 토글.
  * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function TrainingSetsSquaresBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
+function TrainingSetsSquaresBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload }) {
   const setCount = card.setCount ?? 4
   const squaresPerSet = card.squaresPerSet ?? 4
 
@@ -152,9 +155,12 @@ function TrainingSetsSquaresBlock({ card, onSave, onEdit, isSaved, savedPayload 
             </div>
           ))}
         </div>
-        <div className="day-card__save-wrap">
+        <div className="day-card__save-wrap day-card__save-wrap--actions">
           <button type="button" className="day-card__edit-btn" onClick={onEdit}>
             수정
+          </button>
+          <button type="button" className="day-card__delete-btn" onClick={onDelete}>
+            삭제
           </button>
         </div>
       </article>
@@ -206,32 +212,39 @@ function TrainingSetsSquaresBlock({ card, onSave, onEdit, isSaved, savedPayload 
 }
 
 /**
- * 지난기록: 세트별 사각형 완료 상태 읽기 전용 표시
+ * 지난기록: 같은 운동 유형의 가장 최근 기록(세트별 사각형) 표시
+ * 기록이 없으면 "지난 운동 기록이 없습니다." 표시
  */
-function PreviousRecordsBlock({ card }) {
+function PreviousRecordsBlock({ card, latestRecord }) {
   const setCount = card.setCount ?? 4
   const squaresPerSet = card.squaresPerSet ?? 4
-  const records = card.records ?? {}
+  const records = (latestRecord?.detailType === 'training_sets_squares' && latestRecord?.payload)
+    ? latestRecord.payload
+    : null
 
   return (
     <article className="day-card day-card--previous-records">
       {card.title && <h3 className="day-card__list-title">{card.title}</h3>}
-      <div className="day-card__set-rows">
-        {Array.from({ length: setCount }, (_, i) => i + 1).map((setNum) => (
-          <div key={setNum} className="day-card__set-row">
-            <span className="day-card__set-label">{setNum}set</span>
-            <div className="day-card__squares day-card__squares--readonly">
-              {Array.from({ length: squaresPerSet }, (_, j) => (
-                <span
-                  key={j}
-                  className={`day-card__square day-card__square--readonly ${records[setNum]?.[j] ? 'day-card__square--active' : ''}`}
-                  aria-hidden
-                />
-              ))}
+      {records ? (
+        <div className="day-card__set-rows">
+          {Array.from({ length: setCount }, (_, i) => i + 1).map((setNum) => (
+            <div key={setNum} className="day-card__set-row">
+              <span className="day-card__set-label">{setNum}set</span>
+              <div className="day-card__squares day-card__squares--readonly">
+                {Array.from({ length: squaresPerSet }, (_, j) => (
+                  <span
+                    key={j}
+                    className={`day-card__square day-card__square--readonly ${records[setNum]?.[j] ? 'day-card__square--active' : ''}`}
+                    aria-hidden
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <p className="day-card__no-records">지난 운동 기록이 없습니다.</p>
+      )}
     </article>
   )
 }
@@ -240,7 +253,7 @@ function PreviousRecordsBlock({ card }) {
  * 휴식/유산소: 메시지 + 항목별 왼쪽 사각형 완료 표시. 사각형 클릭 시 파란색 토글.
  * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function ChecklistBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
+function ChecklistBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload }) {
   const items = card.items ?? []
   const savedCompleted = Array.isArray(savedPayload?.completed) ? savedPayload.completed : []
   const [completed, setCompleted] = useState(() =>
@@ -279,9 +292,12 @@ function ChecklistBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
             </div>
           ))}
         </div>
-        <div className="day-card__save-wrap">
+        <div className="day-card__save-wrap day-card__save-wrap--actions">
           <button type="button" className="day-card__edit-btn" onClick={onEdit}>
             수정
+          </button>
+          <button type="button" className="day-card__delete-btn" onClick={onDelete}>
+            삭제
           </button>
         </div>
       </article>
@@ -331,7 +347,7 @@ function ChecklistBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
  * 휴식/보강운동: 덤벨숄더프레스·푸쉬업·모빌리티 스트레칭 완료 사각형 + (항목별) 1~4세트 중량·횟수 입력
  * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function RestStrengthBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
+function RestStrengthBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload }) {
   const items = card.items ?? []
   const savedItems = Array.isArray(savedPayload?.items) ? savedPayload.items : []
 
@@ -411,9 +427,12 @@ function RestStrengthBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
             </div>
           ))}
         </div>
-        <div className="day-card__save-wrap">
+        <div className="day-card__save-wrap day-card__save-wrap--actions">
           <button type="button" className="day-card__edit-btn" onClick={onEdit}>
             수정
+          </button>
+          <button type="button" className="day-card__delete-btn" onClick={onDelete}>
+            삭제
           </button>
         </div>
       </article>
@@ -532,16 +551,39 @@ function RestStrengthBlock({ card, onSave, onEdit, isSaved, savedPayload }) {
 }
 
 /**
- * 지난기록 (휴식/보강 형식): 항목별 완료 사각형 + 1~4세트 중량/횟수 읽기 전용. 저장 버튼 없음.
+ * 지난기록 (휴식/보강 형식): 같은 운동 유형의 가장 최근 기록 표시
+ * 기록이 없으면 "지난 운동 기록이 없습니다." 표시
  */
-function PreviousRecordsStrengthBlock({ card }) {
+function PreviousRecordsStrengthBlock({ card, latestRecord }) {
   const items = card.items ?? []
+  const savedItems = (latestRecord?.detailType === 'rest_strength_exercises' && latestRecord?.payload?.items)
+    ? latestRecord.payload.items
+    : null
+
+  if (!savedItems || savedItems.length === 0) {
+    return (
+      <article className="day-card day-card--previous-records-strength">
+        {card.title && <h3 className="day-card__list-title">{card.title}</h3>}
+        <p className="day-card__no-records">지난 운동 기록이 없습니다.</p>
+      </article>
+    )
+  }
+
+  const displayItems = items.map((item, i) => {
+    const s = savedItems[i] ?? {}
+    return {
+      ...item,
+      completed: !!s.completed,
+      sets: s.sets ?? [],
+      reps: s.reps,
+    }
+  })
 
   return (
     <article className="day-card day-card--previous-records-strength">
       {card.title && <h3 className="day-card__list-title">{card.title}</h3>}
       <div className="day-card__rest-strength-list">
-        {items.map((item, itemIndex) => (
+        {displayItems.map((item, itemIndex) => (
           <div key={itemIndex} className="day-card__rest-strength-item">
             <div className="day-card__checklist-row">
               <span
@@ -637,8 +679,10 @@ export default function DayContentCard({
   nextExpedition,
   nextExpeditionLoading,
   onSave,
+  onDeleteRecord,
   saveContext,
   todayRecord,
+  latestRecord,
   isEditingRecord,
   onEditRecord,
 }) {
@@ -678,6 +722,7 @@ export default function DayContentCard({
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
           onEdit={onEditRecord}
+          onDelete={onDeleteRecord}
           isSaved={isSaved}
           savedPayload={todayRecord?.detailType === 'training_sets' ? todayRecord?.payload : undefined}
         />
@@ -693,6 +738,7 @@ export default function DayContentCard({
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
           onEdit={onEditRecord}
+          onDelete={onDeleteRecord}
           isSaved={isSaved}
           savedPayload={todayRecord?.detailType === 'training_sets_squares' ? todayRecord?.payload : undefined}
         />
@@ -700,7 +746,7 @@ export default function DayContentCard({
     }
 
     case CARD_TYPES.PREVIOUS_RECORDS:
-      return <PreviousRecordsBlock card={card} />
+      return <PreviousRecordsBlock card={card} latestRecord={latestRecord} />
 
     case CARD_TYPES.CHECKLIST: {
       const isSaved = !isEditingRecord && todayRecord?.detailType === 'checklist'
@@ -710,6 +756,7 @@ export default function DayContentCard({
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
           onEdit={onEditRecord}
+          onDelete={onDeleteRecord}
           isSaved={isSaved}
           savedPayload={todayRecord?.detailType === 'checklist' ? todayRecord?.payload : undefined}
         />
@@ -725,6 +772,7 @@ export default function DayContentCard({
           card={card}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
           onEdit={onEditRecord}
+          onDelete={onDeleteRecord}
           isSaved={isSaved}
           savedPayload={todayRecord?.detailType === 'rest_strength_exercises' ? todayRecord?.payload : undefined}
         />
@@ -732,7 +780,7 @@ export default function DayContentCard({
     }
 
     case CARD_TYPES.PREVIOUS_RECORDS_STRENGTH:
-      return <PreviousRecordsStrengthBlock card={card} />
+      return <PreviousRecordsStrengthBlock card={card} latestRecord={latestRecord} />
 
     case CARD_TYPES.EXERCISE_METHOD:
       return (

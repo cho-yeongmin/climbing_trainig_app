@@ -53,6 +53,12 @@
   grid-row: 1;
 }
 
+.log-card__y-tick {
+  font-size: 10px;
+  fill: #9aa0a6;
+  font-family: inherit;
+}
+
 .log-card__y-labels {
   position: absolute;
   left: 0.5rem;

@@ -1,0 +1,330 @@
+.spray-wall-gallery {
+  margin-top: 0.25rem;
+}
+
+.spray-wall-gallery__header {
+  margin-bottom: 1rem;
+}
+
+.spray-wall-gallery__title {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.spray-wall-gallery__empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  font-size: 0.9375rem;
+  color: #5f6368;
+  text-align: center;
+}
+
+.spray-wall-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .spray-wall-gallery__grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+}
+
+.spray-wall-gallery__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f3f4;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.spray-wall-gallery__item:hover {
+  border-color: #4285f4;
+  box-shadow: 0 2px 6px rgba(66, 133, 244, 0.15);
+}
+
+.spray-wall-gallery__thumb {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.spray-wall-gallery__name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #202124;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 모달 */
+.spray-wall-gallery__modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1rem;
+}
+
+.spray-wall-gallery__modal-content {
+  position: relative;
+  max-width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spray-wall-gallery__modal-close {
+  position: absolute;
+  top: -2.5rem;
+  right: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #fff;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.spray-wall-gallery__modal-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  font-size: 2rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.spray-wall-gallery__modal-nav:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.spray-wall-gallery__modal-nav--prev {
+  left: -3rem;
+}
+
+.spray-wall-gallery__modal-nav--next {
+  right: -3rem;
+}
+
+.spray-wall-gallery__modal-img {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.spray-wall-gallery__modal-title {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.spray-wall-gallery__modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.spray-wall-gallery__action-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #4285f4;
+  background: #fff;
+  border: 1px solid #4285f4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.spray-wall-gallery__action-btn:hover {
+  background: #4285f4;
+  color: #fff;
+}
+
+.spray-wall-gallery__action-btn--danger {
+  color: #d93025;
+  border-color: #d93025;
+}
+
+.spray-wall-gallery__action-btn--danger:hover {
+  background: #d93025;
+  color: #fff;
+}
+
+/* 태그 편집 모달 */
+.spray-wall-gallery__tag-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 360px;
+  width: 100%;
+}
+
+.spray-wall-gallery__tag-title {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.spray-wall-gallery__tag-input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.spray-wall-gallery__tag-input:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+.spray-wall-gallery__tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.spray-wall-gallery__tag-chip {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  color: #4285f4;
+  background: #e8f0fe;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.spray-wall-gallery__tag-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.spray-wall-gallery__save-tags {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #fff;
+  background: #4285f4;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.spray-wall-gallery__save-tags:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spray-wall-gallery__cancel-tags {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #5f6368;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* 삭제 확인 모달 */
+.spray-wall-gallery__delete-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 360px;
+  width: 100%;
+}
+
+.spray-wall-gallery__delete-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.spray-wall-gallery__delete-msg {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9375rem;
+  color: #5f6368;
+}
+
+.spray-wall-gallery__delete-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
+.spray-wall-gallery__delete-input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.spray-wall-gallery__delete-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.spray-wall-gallery__confirm-delete {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #fff;
+  background: #d93025;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.spray-wall-gallery__confirm-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spray-wall-gallery__cancel-delete {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #5f6368;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  cursor: pointer;
+}

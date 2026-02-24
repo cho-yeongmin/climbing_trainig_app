@@ -1,16 +1,18 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, saveTrainingRecord } from '../hooks/useSupabase'
+import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, useLatestTrainingRecord, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
 import { getDayContentByType } from '../data/dayContent'
 import DayContentCard from './DayContentCard'
 import ScheduleView from './ScheduleView'
 import ExerciseLogView from './ExerciseLogView'
+import SprayWallView from './SprayWallView'
 import './HomeScreen.css'
 
 const TABS = [
   { id: 'home', label: '홈' },
   { id: 'schedule', label: '일정확인' },
   { id: 'log', label: '운동로그' },
+  { id: 'spraywall', label: '스프레이월' },
 ]
 
 export default function HomeScreen() {
@@ -49,6 +51,11 @@ export default function HomeScreen() {
     exerciseType?.id
   )
 
+  const { data: latestRecord } = useLatestTrainingRecord(
+    user?.id,
+    exerciseType?.id
+  )
+
   const [isEditingRecord, setIsEditingRecord] = useState(false)
 
   const handleSaveRecord = useCallback(
@@ -66,6 +73,22 @@ export default function HomeScreen() {
       } catch (err) {
         console.error(err)
         alert('저장에 실패했습니다.')
+      }
+    },
+    [saveContext, refetchTodayRecord]
+  )
+
+  const handleDeleteRecord = useCallback(
+    async () => {
+      if (!saveContext || !confirm('오늘 저장한 운동 기록을 삭제할까요?')) return
+      try {
+        await deleteTodayTrainingRecord(saveContext)
+        await refetchTodayRecord()
+        setIsEditingRecord(false)
+        alert('삭제되었습니다.')
+      } catch (err) {
+        console.error(err)
+        alert('삭제에 실패했습니다.')
       }
     },
     [saveContext, refetchTodayRecord]
@@ -110,8 +133,10 @@ export default function HomeScreen() {
                 nextExpedition={card.type === 'dday' ? nextExpedition : undefined}
                 nextExpeditionLoading={card.type === 'dday' ? nextExpeditionLoading : false}
                 onSave={handleSaveRecord}
+                onDeleteRecord={handleDeleteRecord}
                 saveContext={saveContext}
                 todayRecord={todayRecord}
+                latestRecord={latestRecord}
                 isEditingRecord={isEditingRecord}
                 onEditRecord={() => setIsEditingRecord(true)}
               />
@@ -122,6 +147,8 @@ export default function HomeScreen() {
         {activeTab === 'schedule' && <ScheduleView />}
 
         {activeTab === 'log' && <ExerciseLogView />}
+
+        {activeTab === 'spraywall' && <SprayWallView userId={user?.id} />}
       </main>
     </div>
   )

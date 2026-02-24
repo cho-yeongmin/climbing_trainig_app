@@ -97,12 +97,6 @@ export function getCardsForDayType(dayTypeId) {
         title: '지난기록',
         setCount: 4,
         squaresPerSet: 4,
-        records: {
-          1: [true, true, false, false],
-          2: [true, false, false, false],
-          3: [true, false, false, false],
-          4: [false, false, false, false],
-        },
       },
     ],
     [DAY_TYPE_IDS.REST_CARDIO]: [
@@ -141,12 +135,6 @@ export function getCardsForDayType(dayTypeId) {
         title: '지난기록',
         setCount: 4,
         squaresPerSet: 4,
-        records: {
-          1: [true, true, false, false],
-          2: [true, false, false, false],
-          3: [true, false, false, false],
-          4: [false, false, false, false],
-        },
       },
     ],
     [DAY_TYPE_IDS.REST_STRENGTH]: [
@@ -175,18 +163,9 @@ export function getCardsForDayType(dayTypeId) {
         type: CARD_TYPES.PREVIOUS_RECORDS_STRENGTH,
         title: '지난기록',
         items: [
-          {
-            label: '덤벨숄더프레스',
-            completed: true,
-            sets: [
-              { weight: '3', reps: '10' },
-              { weight: '3', reps: '10' },
-              { weight: '3', reps: '10' },
-              { weight: '3', reps: '10' },
-            ],
-          },
-          { label: '푸쉬업', completed: false, reps: '15' },
-          { label: '모빌리티 스트레칭', completed: false },
+          { label: '덤벨숄더프레스', setCount: 4 },
+          { label: '푸쉬업', repsOnly: true },
+          { label: '모빌리티 스트레칭' },
         ],
       },
     ],

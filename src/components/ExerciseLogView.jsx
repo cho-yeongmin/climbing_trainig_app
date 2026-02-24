@@ -15,6 +15,20 @@ function formatDateLabel(dateStr) {
   return `${m}월 ${day}일`
 }
 
+function getYTickValues(min, max) {
+  if (min === max) return [min]
+  const range = max - min
+  if (range <= 6) {
+    return Array.from({ length: max - min + 1 }, (_, i) => min + i)
+  }
+  const step = Math.max(1, Math.ceil(range / 4))
+  const ticks = []
+  for (let v = min; v <= max; v += step) ticks.push(v)
+  if (ticks[ticks.length - 1] !== max) ticks.push(max)
+  return ticks
+}
+
+
 function LineChartCard({ id, title, data, loading }) {
   const padding = { top: 12, right: 12, bottom: 28, left: 44 }
   const width = 280
@@ -47,8 +61,8 @@ function LineChartCard({ id, title, data, loading }) {
   }
 
   const values = data.map((d) => d.value)
-  const min = Math.min(...values)
-  const max = Math.max(...values)
+  const min = 0
+  const max = Math.max(...values, 1)
   const range = max - min || 1
   const xStep = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth
   const points = data.map((y, i) => {
@@ -61,6 +75,7 @@ function LineChartCard({ id, title, data, loading }) {
   const gradientId = `chartFill-${id}`
 
   const xLabels = data.map((d) => formatDateLabel(d.date))
+  const yTicks = getYTickValues(0, max)
 
   return (
     <article className="log-card">
@@ -83,6 +98,21 @@ function LineChartCard({ id, title, data, loading }) {
           {points.map((p, i) => (
             <circle key={i} cx={p[0]} cy={p[1]} r="4" fill="#4285f4" />
           ))}
+          {yTicks.map((tickVal) => {
+            const y = padding.top + chartHeight - ((tickVal - min) / range) * chartHeight
+            return (
+              <text
+                key={tickVal}
+                x={padding.left - 6}
+                y={y}
+                textAnchor="end"
+                dominantBaseline="middle"
+                className="log-card__y-tick"
+              >
+                {tickVal}
+              </text>
+            )
+          })}
         </svg>
         <div className="log-card__x-labels" aria-hidden>
           {xLabels.map((label) => (

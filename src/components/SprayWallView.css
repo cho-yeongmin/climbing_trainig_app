@@ -1,0 +1,85 @@
+.spray-wall-view {
+  margin-top: 0.25rem;
+}
+
+.spray-wall-view__header {
+  margin-bottom: 1rem;
+}
+
+.spray-wall__back {
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #4285f4;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.spray-wall__back:hover {
+  color: #1a73e8;
+  text-decoration: underline;
+}
+
+.spray-wall__type-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.spray-wall-view__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.spray-wall-view__cards--type {
+  gap: 0.75rem;
+}
+
+.spray-wall-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 1.25rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f3f4;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.spray-wall-card:hover {
+  border-color: #4285f4;
+  box-shadow: 0 2px 6px rgba(66, 133, 244, 0.15);
+}
+
+.spray-wall-card__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.spray-wall-card__label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.spray-wall-card__sub {
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
+.spray-wall__empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  font-size: 0.9375rem;
+  color: #5f6368;
+  text-align: center;
+}

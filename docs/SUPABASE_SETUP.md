@@ -26,8 +26,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 1. [Supabase](https://supabase.com) 로그인 후 새 프로젝트 생성
 2. 프로젝트 대시보드 → **SQL Editor** → 새 쿼리 생성
 3. `supabase/migrations/001_initial_schema.sql` 내용 전체 복사 후 실행
-4. 이어서 `supabase/seed.sql` 실행 (운동 종류 7개 초기 데이터)
-5. **Realtime 활성화** (관리자가 일정 추가/수정 시 이용자 화면 자동 갱신용):  
+4. `supabase/migrations/002_spray_wall_problems.sql` 실행 (스프레이월 문제 테이블)
+5. 이어서 `supabase/seed.sql` 실행 (운동 종류 7개 초기 데이터)
+6. **Realtime 활성화** (관리자가 일정 추가/수정 시 이용자 화면 자동 갱신용):  
    대시보드 → **Database** → **Replication** → **Tables**에서 `schedules` 테이블 옆 토글을 켜서 Realtime을 활성화합니다.
 
 ---

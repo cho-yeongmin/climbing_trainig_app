@@ -1,0 +1,138 @@
+.spray-wall-create {
+  margin-top: 0.25rem;
+}
+
+.spray-wall-create__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.spray-wall-create__type-badge {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #4285f4;
+  background: #e8f0fe;
+  border-radius: 6px;
+}
+
+.spray-wall-create__area {
+  position: relative;
+  margin-bottom: 1rem;
+  min-height: 200px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.spray-wall-create__upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.spray-wall-create__upload:hover {
+  background: #eef1f4;
+}
+
+.spray-wall-create__upload span {
+  font-size: 0.9375rem;
+  color: #5f6368;
+}
+
+.spray-wall-create__file {
+  display: none;
+}
+
+.spray-wall-create__canvas {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.spray-wall-create__loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #5f6368;
+}
+
+.spray-wall-create__reset {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #4285f4;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.spray-wall-create__reset:hover {
+  color: #1a73e8;
+  text-decoration: underline;
+}
+
+.spray-wall-create__controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.spray-wall-create__name {
+  flex: 1;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: #202124;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.spray-wall-create__name:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+.spray-wall-create__save {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #fff;
+  background: #4285f4;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.spray-wall-create__save:hover:not(:disabled) {
+  background: #1a73e8;
+}
+
+.spray-wall-create__save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spray-wall-create__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #9aa0a6;
+  line-height: 1.4;
+}
