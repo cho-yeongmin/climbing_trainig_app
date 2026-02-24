@@ -56,6 +56,121 @@
   position: relative;
 }
 
+/* 연·월 표시: 좌우 chevron (이미지 스타일) */
+.schedule-view__ym-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.schedule-view__ym-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #5f6368;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.schedule-view__ym-nav:hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+.schedule-view__ym-nav:focus {
+  outline: none;
+}
+
+.schedule-view__ym-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #202124;
+  min-width: 4rem;
+  text-align: center;
+}
+
+/* 날짜 정보 카드 (캘린더 ~ 일정추가 버튼 사이) */
+.schedule-view__date-info {
+  margin-top: 1.25rem;
+  min-height: 4rem;
+}
+
+.schedule-view__info-placeholder {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #9aa0a6;
+  text-align: center;
+}
+
+.schedule-view__info-empty {
+  padding: 1rem;
+  font-size: 0.9375rem;
+  color: #5f6368;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+}
+
+.schedule-view__info-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.schedule-view__info-icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #4285f4;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.schedule-view__info-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.schedule-view__info-icon span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #4285f4;
+}
+
+.schedule-view__info-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-view__info-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.schedule-view__info-address {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
 /* 연·월 아래 회색 선 + 요일/날짜와의 넓은 간격 */
 .schedule-view__body {
   border-top: 1px solid #e8eaed;

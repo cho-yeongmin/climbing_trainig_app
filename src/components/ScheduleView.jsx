@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSchedules } from '../hooks/useSupabase'
 import AddScheduleView from './AddScheduleView'
@@ -33,18 +33,18 @@ function buildCalendarGrid(year, month) {
   return grid
 }
 
-const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 const MIN_YEAR = 2024
 const MAX_YEAR = 2030
+const SWIPE_THRESHOLD = 50
 
 export default function ScheduleView() {
   const { isAdmin } = useAuth()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
-  const [showPicker, setShowPicker] = useState(false)
   const [selectedDate, setSelectedDate] = useState(null)
   const [showAddSchedule, setShowAddSchedule] = useState(false)
+  const swipeStartX = useRef(0)
 
   const grid = useMemo(() => buildCalendarGrid(year, month), [year, month])
   const { data: scheduleMap, refetch: refetchSchedules } = useSchedules(year, month)
@@ -61,77 +61,81 @@ export default function ScheduleView() {
     selectedDate.month === month &&
     selectedDate.day === dateNum
 
-  const handleYearMonthChange = (setter, value) => {
-    setter(value)
+  const goPrevMonth = useCallback(() => {
+    if (month === 1) {
+      setYear((y) => Math.max(MIN_YEAR, y - 1))
+      setMonth(12)
+    } else {
+      setMonth((m) => m - 1)
+    }
     setSelectedDate(null)
+  }, [month])
+
+  const goNextMonth = useCallback(() => {
+    if (month === 12) {
+      setYear((y) => Math.min(MAX_YEAR, y + 1))
+      setMonth(1)
+    } else {
+      setMonth((m) => m + 1)
+    }
+    setSelectedDate(null)
+  }, [month])
+
+  const handleSwipeStart = (e) => {
+    swipeStartX.current = e.touches ? e.touches[0].clientX : e.clientX
   }
+  const handleSwipeEnd = (e) => {
+    const endX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX
+    const diff = swipeStartX.current - endX
+    if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+      if (diff > 0) goNextMonth()
+      else goPrevMonth()
+    }
+  }
+
+  const selectedSchedule = useMemo(() => {
+    if (!selectedDate) return null
+    const dateStr = `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
+    return scheduleMap[dateStr] ?? null
+  }, [selectedDate, scheduleMap])
 
   return (
     <div className="schedule-view">
-      <div className="schedule-view__calendar-wrap">
-        <div className="schedule-view__header">
-          <button
-            type="button"
-            className="schedule-view__ym"
-            onClick={() => setShowPicker((v) => !v)}
-            aria-expanded={showPicker}
-            aria-haspopup="listbox"
-            aria-label="연도 월 선택"
-          >
-            <span className="schedule-view__ym-text">{year}. {month}</span>
-            <span className="schedule-view__ym-chevron" aria-hidden>∨</span>
+      <div
+        className="schedule-view__calendar-wrap"
+        onTouchStart={handleSwipeStart}
+        onTouchEnd={handleSwipeEnd}
+        onMouseDown={(e) => { swipeStartX.current = e.clientX }}
+        onMouseUp={(e) => {
+          const diff = swipeStartX.current - e.clientX
+          if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+            if (diff > 0) goNextMonth()
+            else goPrevMonth()
+          }
+        }}
+      >
+        <div className="schedule-view__header schedule-view__ym-row">
+          <button type="button" className="schedule-view__ym-nav" onClick={goPrevMonth} aria-label="이전 달">
+            ‹
           </button>
-          {showPicker && (
-            <div className="schedule-view__picker" role="listbox">
-              <div className="schedule-view__picker-row">
-                <label className="schedule-view__picker-label">연도</label>
-                <select
-                  className="schedule-view__select"
-                value={year}
-                onChange={(e) => handleYearMonthChange(setYear, Number(e.target.value))}
-                  aria-label="연도 선택"
-                >
-                  {Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, i) => MIN_YEAR + i).map((y) => (
-                    <option key={y} value={y}>{y}년</option>
-                  ))}
-                </select>
-              </div>
-              <div className="schedule-view__picker-row">
-                <label className="schedule-view__picker-label">월</label>
-                <select
-                  className="schedule-view__select"
-                value={month}
-                onChange={(e) => handleYearMonthChange(setMonth, Number(e.target.value))}
-                  aria-label="월 선택"
-                >
-                  {MONTHS.map((m) => (
-                    <option key={m} value={m}>{m}월</option>
-                  ))}
-                </select>
-              </div>
-              <button
-                type="button"
-                className="schedule-view__picker-close"
-                onClick={() => setShowPicker(false)}
-              >
-                닫기
-              </button>
-            </div>
-          )}
+          <span className="schedule-view__ym-text">{year}. {month}</span>
+          <button type="button" className="schedule-view__ym-nav" onClick={goNextMonth} aria-label="다음 달">
+            ›
+          </button>
         </div>
 
         <div className="schedule-view__body">
-        <div className="schedule-view__weekdays">
-          {WEEKDAYS.map((w) => (
-            <span key={w} className="schedule-view__weekday">{w}</span>
-          ))}
-        </div>
+          <div className="schedule-view__weekdays">
+            {WEEKDAYS.map((w) => (
+              <span key={w} className="schedule-view__weekday">{w}</span>
+            ))}
+          </div>
 
-        <div className="schedule-view__grid">
+          <div className="schedule-view__grid">
           {grid.map((dateNum, i) => {
             const schedule = getCellSchedule(dateNum)
             const selected = dateNum != null && isSelected(dateNum)
-            const clickable = isAdmin && dateNum != null
+            const clickable = dateNum != null
             const imageUrl = schedule?.place?.image_url ?? schedule?.exerciseType?.image_url
             const cellClass = [
               'schedule-view__cell',
@@ -179,6 +183,37 @@ export default function ScheduleView() {
           })}
         </div>
         </div>
+      </div>
+
+      <div className="schedule-view__date-info">
+        {selectedDate ? (
+          selectedSchedule ? (
+            <div className="schedule-view__info-card">
+              <div className="schedule-view__info-icon" aria-hidden>
+                {selectedSchedule.place?.image_url || selectedSchedule.exerciseType?.image_url ? (
+                  <img
+                    src={selectedSchedule.place?.image_url || selectedSchedule.exerciseType?.image_url}
+                    alt=""
+                  />
+                ) : (
+                  <span />
+                )}
+              </div>
+              <div className="schedule-view__info-body">
+                <div className="schedule-view__info-title">
+                  {selectedSchedule.place?.name || selectedSchedule.exerciseType?.name || '일정'}
+                </div>
+                {(selectedSchedule.place?.address) && (
+                  <div className="schedule-view__info-address">{selectedSchedule.place.address}</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="schedule-view__info-empty">일정이 없습니다.</div>
+          )
+        ) : (
+          <div className="schedule-view__info-placeholder">날짜를 선택하세요</div>
+        )}
       </div>
 
       {isAdmin && (
