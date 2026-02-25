@@ -121,20 +121,20 @@ export default function HomeScreen() {
   )
 
   return (
-    <div className="home-screen">
-      <main
-        className="home-screen__main"
-        onTouchStart={handleSwipeStart}
-        onTouchEnd={handleSwipeEnd}
-        onMouseDown={(e) => { swipeStartX.current = e.clientX }}
-        onMouseUp={(e) => {
-          const diff = swipeStartX.current - e.clientX
-          if (Math.abs(diff) >= SWIPE_THRESHOLD) {
-            if (diff > 0) goNextTab()
-            else goPrevTab()
-          }
-        }}
-      >
+    <div
+      className="home-screen"
+      onTouchStart={handleSwipeStart}
+      onTouchEnd={handleSwipeEnd}
+      onMouseDown={(e) => { swipeStartX.current = e.clientX }}
+      onMouseUp={(e) => {
+        const diff = swipeStartX.current - e.clientX
+        if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+          if (diff > 0) goNextTab()
+          else goPrevTab()
+        }
+      }}
+    >
+      <main className="home-screen__main">
         <div className="home-screen__header">
           <h1 className="home-screen__title">클라이밍 잘하고 싶다</h1>
           <button
