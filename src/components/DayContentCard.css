@@ -140,7 +140,9 @@
 
 .day-card__save-wrap {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .day-card__save-btn {
@@ -207,6 +209,22 @@
 .day-card__save-wrap--actions .day-card__edit-btn,
 .day-card__save-wrap--actions .day-card__delete-btn {
   margin-left: 0;
+}
+
+.day-card__timer-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  color: #4285f4;
+  background: #fff;
+  border: 1px solid #4285f4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.day-card__timer-btn:hover {
+  background: #4285f4;
+  color: #fff;
 }
 
 .day-card__set-btn--readonly {

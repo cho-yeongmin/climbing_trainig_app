@@ -6,7 +6,7 @@ import './DayContentCard.css'
  * 1 set ~ n set 버튼: 각 세트를 해냈는지 표시. 누른 버튼만 파란색 유지, 기본 선택 없음.
  * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function TrainingSetsBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload }) {
+function TrainingSetsBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload, dayTypeId, onOpenTimer }) {
   const count = card.setCount ?? 5
   const initialSets = Array.isArray(savedPayload?.completedSets) ? new Set(savedPayload.completedSets) : new Set()
   const [completedSets, setCompletedSets] = useState(() => initialSets)
@@ -45,6 +45,11 @@ function TrainingSetsBlock({ card, onSave, onEdit, onDelete, isSaved, savedPaylo
           ))}
         </div>
         <div className="day-card__save-wrap day-card__save-wrap--actions">
+          {dayTypeId === 'finger' && onOpenTimer && (
+            <button type="button" className="day-card__timer-btn" onClick={onOpenTimer} aria-label="타이머">
+              ⏱
+            </button>
+          )}
           <button type="button" className="day-card__edit-btn" onClick={onEdit}>
             수정
           </button>
@@ -82,6 +87,11 @@ function TrainingSetsBlock({ card, onSave, onEdit, onDelete, isSaved, savedPaylo
         ))}
       </div>
       <div className="day-card__save-wrap">
+        {dayTypeId === 'finger' && onOpenTimer && (
+          <button type="button" className="day-card__timer-btn" onClick={onOpenTimer} aria-label="타이머">
+            ⏱
+          </button>
+        )}
         <button
           type="button"
           className="day-card__save-btn"
@@ -98,7 +108,7 @@ function TrainingSetsBlock({ card, onSave, onEdit, onDelete, isSaved, savedPaylo
  * 파워볼더링: 1set~4set 각각 옆에 사각형 N개. 사각형 클릭 시 완료 표시(파란색) 토글.
  * isSaved: 저장된 상태면 읽기 전용 + 수정 버튼
  */
-function TrainingSetsSquaresBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload }) {
+function TrainingSetsSquaresBlock({ card, onSave, onEdit, onDelete, isSaved, savedPayload, dayTypeId, onOpenTimer }) {
   const setCount = card.setCount ?? 4
   const squaresPerSet = card.squaresPerSet ?? 4
 
@@ -156,6 +166,11 @@ function TrainingSetsSquaresBlock({ card, onSave, onEdit, onDelete, isSaved, sav
           ))}
         </div>
         <div className="day-card__save-wrap day-card__save-wrap--actions">
+          {(dayTypeId === 'power_bouldering' || dayTypeId === 'endurance') && onOpenTimer && (
+            <button type="button" className="day-card__timer-btn" onClick={onOpenTimer} aria-label="타이머">
+              ⏱
+            </button>
+          )}
           <button type="button" className="day-card__edit-btn" onClick={onEdit}>
             수정
           </button>
@@ -199,6 +214,11 @@ function TrainingSetsSquaresBlock({ card, onSave, onEdit, onDelete, isSaved, sav
         ))}
       </div>
       <div className="day-card__save-wrap">
+        {(dayTypeId === 'power_bouldering' || dayTypeId === 'endurance') && onOpenTimer && (
+          <button type="button" className="day-card__timer-btn" onClick={onOpenTimer} aria-label="타이머">
+            ⏱
+          </button>
+        )}
         <button
           type="button"
           className="day-card__save-btn"
@@ -848,10 +868,12 @@ function DdayCard({ nextExpeditionLoading, nextExpedition }) {
  */
 export default function DayContentCard({
   card,
+  dayTypeId,
   nextExpedition,
   nextExpeditionLoading,
   onSave,
   onDeleteRecord,
+  onOpenTimer,
   saveContext,
   todayRecord,
   latestRecord,
@@ -899,6 +921,8 @@ export default function DayContentCard({
           onDelete={onDeleteRecord}
           isSaved={isSaved}
           savedPayload={todayRecord?.detailType === 'training_sets' ? todayRecord?.payload : undefined}
+          dayTypeId={dayTypeId}
+          onOpenTimer={onOpenTimer}
         />
       )
     }
@@ -915,6 +939,8 @@ export default function DayContentCard({
           onDelete={onDeleteRecord}
           isSaved={isSaved}
           savedPayload={todayRecord?.detailType === 'training_sets_squares' ? todayRecord?.payload : undefined}
+          dayTypeId={dayTypeId}
+          onOpenTimer={onOpenTimer}
         />
       )
     }

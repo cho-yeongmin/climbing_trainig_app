@@ -1,0 +1,122 @@
+.interval-settings {
+  background: #fff;
+  min-height: 100%;
+  color: #202124;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f3f4;
+}
+
+.interval-settings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.interval-settings__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.interval-settings__btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #5f6368;
+}
+
+.interval-settings__btn:hover {
+  color: #202124;
+}
+
+.interval-settings__btn--save {
+  color: #4285f4;
+  font-weight: 500;
+}
+
+.interval-settings__btn--save:hover {
+  color: #3367d6;
+}
+
+.interval-settings__header-spacer {
+  width: 3rem;
+}
+
+.interval-settings__section {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #5f6368;
+  text-transform: uppercase;
+}
+
+.interval-settings__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.interval-settings__row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #f1f3f4;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.interval-settings__row:hover {
+  border-color: #dadce0;
+}
+
+.interval-settings__icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.interval-settings__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.interval-settings__label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #202124;
+}
+
+.interval-settings__subtitle {
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
+.interval-settings__value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #202124;
+}
+
+.interval-settings__arrow {
+  font-size: 1.25rem;
+  color: #5f6368;
+}
+

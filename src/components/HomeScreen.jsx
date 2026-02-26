@@ -6,6 +6,7 @@ import DayContentCard from './DayContentCard'
 import ScheduleView from './ScheduleView'
 import ExerciseLogView from './ExerciseLogView'
 import SprayWallView from './SprayWallView'
+import TimerView from './TimerView'
 import './HomeScreen.css'
 
 const TABS = [
@@ -91,6 +92,7 @@ export default function HomeScreen() {
   )
 
   const [isEditingRecord, setIsEditingRecord] = useState(false)
+  const [showTimerModal, setShowTimerModal] = useState(false)
 
   const handleSaveRecord = useCallback(
     async (payload, detailType) => {
@@ -142,6 +144,11 @@ export default function HomeScreen() {
         }
       }}
     >
+      {showTimerModal ? (
+        <div className="timer-fullscreen">
+          <TimerView dayTypeId={dayTypeId} onClose={() => setShowTimerModal(false)} />
+        </div>
+      ) : (
       <main className="home-screen__main">
         <div className="home-screen__header">
           <h1 className="home-screen__title">클라이밍 잘하고 싶다</h1>
@@ -176,10 +183,12 @@ export default function HomeScreen() {
               <DayContentCard
                 key={index}
                 card={card}
+                dayTypeId={dayTypeId}
                 nextExpedition={card.type === 'dday' ? nextExpedition : undefined}
                 nextExpeditionLoading={card.type === 'dday' ? nextExpeditionLoading : false}
                 onSave={handleSaveRecord}
                 onDeleteRecord={handleDeleteRecord}
+                onOpenTimer={() => setShowTimerModal(true)}
                 saveContext={saveContext}
                 todayRecord={todayRecord}
                 latestRecord={latestRecord}
@@ -198,6 +207,7 @@ export default function HomeScreen() {
 
         {activeTab === 'spraywall' && <SprayWallView userId={user?.id} />}
       </main>
+      )}
     </div>
   )
 }

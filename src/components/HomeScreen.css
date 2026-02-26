@@ -185,3 +185,40 @@
   font-size: 0.9375rem;
   color: #5f6368;
 }
+
+/* 타이머 전체 화면 */
+.timer-fullscreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.timer-fullscreen .timer-view {
+  flex: 1;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.timer-fullscreen__close {
+  flex-shrink: 0;
+  margin: 1rem;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #fff;
+  background: #4285f4;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.timer-fullscreen__close:hover {
+  background: #3367d6;
+}

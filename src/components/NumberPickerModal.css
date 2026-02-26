@@ -1,0 +1,119 @@
+.number-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.number-picker-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  max-width: 320px;
+  width: 90%;
+  max-height: 80vh;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f3f4;
+}
+
+.number-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.number-picker-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.number-picker-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #5f6368;
+}
+
+.number-picker-btn:hover {
+  color: #202124;
+}
+
+.number-picker-btn--confirm {
+  color: #4285f4;
+  font-weight: 500;
+}
+
+.number-picker-btn--confirm:hover {
+  color: #3367d6;
+}
+
+.number-picker-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.number-picker-column-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.number-picker-column {
+  height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  scroll-snap-type: y mandatory;
+}
+
+.number-picker-column::-webkit-scrollbar {
+  width: 4px;
+}
+
+.number-picker-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.number-picker-option {
+  width: 4rem;
+  height: 48px;
+  padding: 0;
+  font-size: 1.5rem;
+  font-family: inherit;
+  color: #5f6368;
+  background: none;
+  border: none;
+  cursor: pointer;
+  scroll-snap-align: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.number-picker-option:hover {
+  color: #202124;
+}
+
+.number-picker-option--selected {
+  color: #4285f4;
+  font-weight: 600;
+}
+
+.number-picker-unit {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #5f6368;
+}
