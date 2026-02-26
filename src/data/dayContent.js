@@ -42,6 +42,9 @@ export function getCardsForDayType(dayTypeId) {
         message: '오늘은 원정가는 날 입니다.',
         highlight: '원정가는 날',
       },
+      {
+        type: CARD_TYPES.EXPEDITION_CLIMBS,
+      },
     ],
     [DAY_TYPE_IDS.REST]: [
       {

@@ -452,6 +452,91 @@ function getChartValueFromPayload(dayType, detailType, payload) {
   return null
 }
 
+// 장소별 난이도 색상 (색깔 + V급) - 운동장소마다 다름
+export function usePlaceDifficultyColors(placeId) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!placeId) {
+      setData([])
+      setLoading(false)
+      return
+    }
+    supabase
+      .from('place_difficulty_colors')
+      .select('id, color_hex, grade_label, sort_order')
+      .eq('place_id', placeId)
+      .order('sort_order', { ascending: true })
+      .then(({ data: rows }) => {
+        setData(rows ?? [])
+        setLoading(false)
+      })
+  }, [placeId])
+
+  return { data, loading }
+}
+
+// 해당 장소에서의 가장 최근 원정 기록 (오늘 제외) - 상위 2개 난이도만 사용
+export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExerciseTypeId) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const todayStr = getTodayKST()
+
+  useEffect(() => {
+    if (!userId || !placeId || !expeditionExerciseTypeId) {
+      setData(null)
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    supabase
+      .from('schedules')
+      .select('id')
+      .eq('place_id', placeId)
+      .then(({ data: scheds }) => {
+        if (cancelled) return
+        const scheduleIds = (scheds ?? []).map((s) => s.id)
+        if (scheduleIds.length === 0) {
+          setData(null)
+          setLoading(false)
+          return Promise.resolve(null)
+        }
+        return supabase
+          .from('training_records')
+          .select(`
+            id,
+            record_date,
+            training_record_details(detail_type, payload)
+          `)
+          .eq('user_id', userId)
+          .eq('exercise_type_id', expeditionExerciseTypeId)
+          .lt('record_date', todayStr)
+          .in('schedule_id', scheduleIds)
+          .order('record_date', { ascending: false })
+          .limit(1)
+      })
+      .then((res) => {
+        if (cancelled || !res) return
+        const rows = res.data ?? []
+        const row = Array.isArray(rows) ? rows[0] : rows
+        const details = row?.training_record_details ?? []
+        const detail = Array.isArray(details) ? details[0] : details
+        setData(
+          detail?.detail_type === 'expedition_climbs' && detail?.payload
+            ? { payload: detail.payload, recordDate: row?.record_date }
+            : null
+        )
+        setLoading(false)
+      })
+      .catch(() => !cancelled && setLoading(false))
+
+    return () => { cancelled = true }
+  }, [userId, placeId, expeditionExerciseTypeId, todayStr])
+
+  return { data, loading }
+}
+
 // '원정가는 날' 운동 종류 id 조회 (장소만 선택했을 때 일정 저장용)
 export async function getExpeditionExerciseTypeId() {
   const { data, error } = await supabase

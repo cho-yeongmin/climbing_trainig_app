@@ -35,6 +35,7 @@ export const DAY_TYPES = [
  * - exercise_method: 운동방법 제목 + 상세
  * - list: 제목 + 항목 리스트 카드
  * - info: 제목 + 부가 설명 카드
+ * - expedition_climbs: 원정 당일 색상(난이도)별 완등 수 기록 + 이전 방문 기록
  */
 export const CARD_TYPES = {
   DDAY: 'dday',
@@ -48,4 +49,5 @@ export const CARD_TYPES = {
   EXERCISE_METHOD: 'exercise_method',
   LIST: 'list',
   INFO: 'info',
+  EXPEDITION_CLIMBS: 'expedition_climbs',
 }

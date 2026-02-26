@@ -27,8 +27,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 2. 프로젝트 대시보드 → **SQL Editor** → 새 쿼리 생성
 3. `supabase/migrations/001_initial_schema.sql` 내용 전체 복사 후 실행
 4. `supabase/migrations/002_spray_wall_problems.sql` 실행 (스프레이월 문제 테이블)
-5. 이어서 `supabase/seed.sql` 실행 (운동 종류 7개 초기 데이터)
-6. **Realtime 활성화** (관리자가 일정 추가/수정 시 이용자 화면 자동 갱신용):  
+5. `supabase/migrations/003_place_difficulty_colors.sql` 실행 (장소별 난이도 색상)
+6. 이어서 `supabase/seed.sql` 실행 (운동 종류 7개 초기 데이터)
+7. **Realtime 활성화** (관리자가 일정 추가/수정 시 이용자 화면 자동 갱신용):  
    대시보드 → **Database** → **Replication** → **Tables**에서 `schedules` 테이블 옆 토글을 켜서 Realtime을 활성화합니다.
 
 ---
@@ -104,7 +105,36 @@ where id = '여기에-관리자-user-uuid-붙여넣기';
 
 ---
 
-## 5. 일정(schedules) 입력 (관리자 기능)
+## 5. 장소별 난이도 색상(place_difficulty_colors) 입력
+
+원정 당일 사용자가 색상별 완등 수를 기록하려면, 각 장소마다 색상과 난이도(V급) 매핑을 입력해야 합니다.  
+운동장소마다 난이도를 뜻하는 색깔이 다르므로 장소별로 직접 입력합니다.
+
+### SQL Editor에서 입력
+
+```sql
+-- place_id: places 테이블에서 해당 장소의 id
+-- color_hex: 색상 HEX 코드 (예: #ffff00)
+-- grade_label: 난이도 표기 (예: V0, V0+, V1-V2, V3-V4, V5, V6, V7, V8, V9-V10, Vb)
+-- sort_order: 난이도 순서 (0=쉬움, 숫자가 클수록 어려움 - 이전 기록 상위 2개 표시 시 사용)
+insert into public.place_difficulty_colors (place_id, color_hex, grade_label, sort_order)
+values
+  ('장소-uuid-붙여넣기', '#333333', 'V9-V10', 10),
+  ('장소-uuid-붙여넣기', '#d2b48c', 'V8', 9),
+  ('장소-uuid-붙여넣기', '#d3d3d3', 'V7', 8),
+  ('장소-uuid-붙여넣기', '#da70d6', 'V6', 7),
+  ('장소-uuid-붙여넣기', '#ffc0cb', 'V5', 6),
+  ('장소-uuid-붙여넣기', '#ff0000', 'V3-V4', 5),
+  ('장소-uuid-붙여넣기', '#0000ff', 'V1-V2', 4),
+  ('장소-uuid-붙여넣기', '#90ee90', 'V0+', 3),
+  ('장소-uuid-붙여넣기', '#ffa500', 'V0', 2),
+  ('장소-uuid-붙여넣기', '#ffff00', 'V0-', 1),
+  ('장소-uuid-붙여넣기', '#ffffff', 'Vb', 0);
+```
+
+---
+
+## 6. 일정(schedules) 입력 (관리자 기능)
 
 웹앱에서 관리자가 일정 추가 시 이 테이블에 자동 저장됩니다.  
 수동 입력 시:
@@ -118,7 +148,7 @@ values ('2025-03-01', '운동종류-uuid', null);
 
 ---
 
-## 6. 권한 요약
+## 7. 권한 요약
 
 | 역할   | 일정·장소·운동종류 | 본인 훈련기록 | 본인 프로필 |
 |--------|--------------------|---------------|-------------|
@@ -127,7 +157,7 @@ values ('2025-03-01', '운동종류-uuid', null);
 
 ---
 
-## 7. 환경 변수 (.env.local)
+## 8. 환경 변수 (.env.local)
 
 웹앱에서 Supabase 사용 시:
 

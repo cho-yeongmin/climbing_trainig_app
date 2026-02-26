@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, useLatestTrainingRecord, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
+import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
 import { getDayContentByType } from '../data/dayContent'
 import DayContentCard from './DayContentCard'
 import ScheduleView from './ScheduleView'
@@ -80,6 +80,14 @@ export default function HomeScreen() {
   const { data: latestRecord } = useLatestTrainingRecord(
     user?.id,
     exerciseType?.id
+  )
+
+  const placeId = todaySchedule?.place_id ?? null
+  const { data: placeColors } = usePlaceDifficultyColors(placeId)
+  const { data: expeditionLatestRecord } = useLatestExpeditionRecordByPlace(
+    user?.id,
+    placeId,
+    dayTypeId === 'expedition' ? exerciseType?.id : null
   )
 
   const [isEditingRecord, setIsEditingRecord] = useState(false)
@@ -175,6 +183,8 @@ export default function HomeScreen() {
                 saveContext={saveContext}
                 todayRecord={todayRecord}
                 latestRecord={latestRecord}
+                placeColors={placeColors ?? []}
+                expeditionLatestRecord={expeditionLatestRecord}
                 isEditingRecord={isEditingRecord}
                 onEditRecord={() => setIsEditingRecord(true)}
               />
