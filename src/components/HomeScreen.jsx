@@ -218,7 +218,7 @@ export default function HomeScreen() {
               type="button"
               role="tab"
               aria-selected={activeTab === tab.id}
-              className={`home-screen__tab ${activeTab === tab.id ? 'home-screen__tab--active' : ''} ${['home', 'schedule', 'team', 'log'].includes(tab.id) ? 'home-screen__tab--compact' : ''}`}
+              className={`home-screen__tab ${activeTab === tab.id ? 'home-screen__tab--active' : ''} home-screen__tab--compact`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
