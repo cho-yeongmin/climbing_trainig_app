@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useShareBadge, markShareModalSeen } from '../hooks/useShareRequests'
 import { useTeamJoinBadge, markTeamJoinModalSeen } from '../hooks/useProfile'
 import { useNextExpeditionFromMySchedule, useExerciseTypes, useTodayScheduleFromMySchedule, useTodayTrainingRecord, useTodayTrainingRecords, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
+import { setForceLandscape, getForceLandscape } from '../utils/orientation'
 import { getDayContentByType } from '../data/dayContent'
 import { lazy, Suspense } from 'react'
 import DayContentCard from './DayContentCard'
@@ -143,6 +144,7 @@ export default function HomeScreen() {
   const [editingRecordScheduleId, setEditingRecordScheduleId] = useState(null)
   const [showTimerModal, setShowTimerModal] = useState(false)
   const [showProfileEdit, setShowProfileEdit] = useState(false)
+  const [forceLandscape, setForceLandscapeState] = useState(() => getForceLandscape())
 
   const nickname = profile?.nickname || profile?.display_name || '사용자'
   const hasBatchim = (c) => {
@@ -342,6 +344,20 @@ export default function HomeScreen() {
         {activeTab === 'log' && <ExerciseLogView />}
 
         {activeTab === 'spraywall' && <SprayWallView userId={user?.id} />}
+
+        <button
+          type="button"
+          className="home-screen__landscape-btn"
+          onClick={() => {
+            const next = !forceLandscape
+            setForceLandscape(next)
+            setForceLandscapeState(next)
+          }}
+          aria-pressed={forceLandscape}
+          aria-label="가로 모드 레이아웃 전환"
+        >
+          {forceLandscape ? '가로 모드 끄기' : '가로 모드'}
+        </button>
       </main>
       )}
     </div>

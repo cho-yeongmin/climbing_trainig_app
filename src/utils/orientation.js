@@ -4,13 +4,22 @@
  */
 const LANDSCAPE_2COL_MAX_HEIGHT = 900
 const LANDSCAPE_SHORT_MAX_HEIGHT = 500
+const STORAGE_KEY = 'force-landscape-layout'
+
+let forceLandscape = false
 
 function updateOrientation() {
   const w = window.innerWidth
   const h = window.innerHeight
-  const isLandscape = w > h
-  const is2col = isLandscape && h <= LANDSCAPE_2COL_MAX_HEIGHT
-  const isShort = isLandscape && h <= LANDSCAPE_SHORT_MAX_HEIGHT
+  let isLandscape = w > h
+  let is2col = isLandscape && h <= LANDSCAPE_2COL_MAX_HEIGHT
+  let isShort = isLandscape && h <= LANDSCAPE_SHORT_MAX_HEIGHT
+
+  if (forceLandscape) {
+    isLandscape = true
+    is2col = h <= LANDSCAPE_2COL_MAX_HEIGHT
+    isShort = h <= LANDSCAPE_SHORT_MAX_HEIGHT
+  }
 
   const root = document.documentElement
   root.classList.toggle('is-landscape', isLandscape)
@@ -19,11 +28,25 @@ function updateOrientation() {
 }
 
 export function initOrientation() {
+  try {
+    forceLandscape = sessionStorage.getItem(STORAGE_KEY) === '1'
+  } catch (_) {}
   updateOrientation()
 
   window.addEventListener('orientationchange', () => {
-    // 회전 직후 viewport 갱신 지연 대비
     setTimeout(updateOrientation, 100)
   })
   window.addEventListener('resize', updateOrientation)
+}
+
+export function setForceLandscape(on) {
+  forceLandscape = !!on
+  try {
+    sessionStorage.setItem(STORAGE_KEY, on ? '1' : '0')
+  } catch (_) {}
+  updateOrientation()
+}
+
+export function getForceLandscape() {
+  return forceLandscape
 }
