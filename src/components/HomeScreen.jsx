@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useShareBadge, markShareModalSeen } from '../hooks/useShareRequests'
 import { useTeamJoinBadge, markTeamJoinModalSeen } from '../hooks/useProfile'
 import { useNextExpeditionFromMySchedule, useExerciseTypes, useTodayScheduleFromMySchedule, useTodayTrainingRecord, useTodayTrainingRecords, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
-import { setForceLandscape, getForceLandscape } from '../utils/orientation'
+import { lockLandscape, unlockOrientation, canLockOrientation } from '../utils/orientationLock'
 import { getDayContentByType } from '../data/dayContent'
 import { lazy, Suspense } from 'react'
 import DayContentCard from './DayContentCard'
@@ -144,7 +144,18 @@ export default function HomeScreen() {
   const [editingRecordScheduleId, setEditingRecordScheduleId] = useState(null)
   const [showTimerModal, setShowTimerModal] = useState(false)
   const [showProfileEdit, setShowProfileEdit] = useState(false)
-  const [forceLandscape, setForceLandscapeState] = useState(() => getForceLandscape())
+  const [orientationLocked, setOrientationLocked] = useState(false)
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        unlockOrientation()
+        setOrientationLocked(false)
+      }
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [])
 
   const nickname = profile?.nickname || profile?.display_name || '사용자'
   const hasBatchim = (c) => {
@@ -348,15 +359,24 @@ export default function HomeScreen() {
         <button
           type="button"
           className="home-screen__landscape-btn"
-          onClick={() => {
-            const next = !forceLandscape
-            setForceLandscape(next)
-            setForceLandscapeState(next)
+          onClick={async () => {
+            if (orientationLocked) {
+              await unlockOrientation()
+              setOrientationLocked(false)
+              return
+            }
+            if (!canLockOrientation()) {
+              alert('이 브라우저는 화면 회전 잠금을 지원하지 않습니다. 기기를 가로로 돌려 주세요.')
+              return
+            }
+            const ok = await lockLandscape()
+            if (ok) setOrientationLocked(true)
+            else alert('화면 잠금에 실패했습니다. 기기를 가로로 돌려 주세요.')
           }}
-          aria-pressed={forceLandscape}
-          aria-label="가로 모드 레이아웃 전환"
+          aria-pressed={orientationLocked}
+          aria-label="가로 모드 화면 잠금"
         >
-          {forceLandscape ? '가로 모드 끄기' : '가로 모드'}
+          {orientationLocked ? '가로 모드 끄기' : '가로 모드'}
         </button>
       </main>
       )}
