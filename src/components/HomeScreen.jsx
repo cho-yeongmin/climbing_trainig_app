@@ -1,10 +1,14 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useShareBadge, markShareModalSeen } from '../hooks/useShareRequests'
 import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
 import { getDayContentByType } from '../data/dayContent'
+import { lazy, Suspense } from 'react'
 import DayContentCard from './DayContentCard'
-import ScheduleView from './ScheduleView'
 import ExerciseLogView from './ExerciseLogView'
+import ProfileEditModal from './ProfileEditModal'
+
+const ScheduleView = lazy(() => import('./ScheduleView'))
 import SprayWallView from './SprayWallView'
 import TimerView from './TimerView'
 import './HomeScreen.css'
@@ -19,7 +23,7 @@ const TABS = [
 const SWIPE_THRESHOLD = 50
 
 export default function HomeScreen() {
-  const { logout, user } = useAuth()
+  const { logout, user, profile, teamId, isAdmin, isSupervisor, refetchProfile } = useAuth()
   const [activeTab, setActiveTab] = useState('home')
   const swipeStartX = useRef(0)
 
@@ -46,9 +50,9 @@ export default function HomeScreen() {
     }
   }
 
-  const { data: nextExpedition, loading: nextExpeditionLoading } = useNextExpedition()
+  const { data: nextExpedition, loading: nextExpeditionLoading } = useNextExpedition(teamId)
   const { data: exerciseTypes } = useExerciseTypes()
-  const { data: todaySchedule } = useTodaySchedule()
+  const { data: todaySchedule } = useTodaySchedule(teamId)
 
   // 오늘 일정이 있으면 그 운동 유형, 없으면 휴식하는 날
   const dayTypeId = todaySchedule?.exercise_types?.day_type_id ?? 'rest'
@@ -69,8 +73,9 @@ export default function HomeScreen() {
       recordDate: new Date(),
       exerciseTypeId: exerciseType.id,
       scheduleId: todaySchedule?.id ?? null,
+      teamId: teamId ?? null,
     }
-  }, [user?.id, exerciseType?.id, todaySchedule?.id])
+  }, [user?.id, exerciseType?.id, todaySchedule?.id, teamId])
 
   const { data: todayRecord, refetch: refetchTodayRecord } = useTodayTrainingRecord(
     user?.id,
@@ -93,6 +98,19 @@ export default function HomeScreen() {
 
   const [isEditingRecord, setIsEditingRecord] = useState(false)
   const [showTimerModal, setShowTimerModal] = useState(false)
+  const [showProfileEdit, setShowProfileEdit] = useState(false)
+
+  const nickname = profile?.nickname || profile?.display_name || '사용자'
+  const hasBatchim = (c) => {
+    if (!c) return false
+    const code = c.charCodeAt(0)
+    if (code < 0xac00 || code > 0xd7a3) return true
+    return (code - 0xac00) % 28 !== 0
+  }
+  const particle = hasBatchim(nickname.slice(-1)) ? '은' : '는'
+
+  const { hasBadge: shareBadgeActive, sharedCount } = useShareBadge()
+  const hasShareBadge = (isAdmin || isSupervisor) && shareBadgeActive
 
   const handleSaveRecord = useCallback(
     async (payload, detailType) => {
@@ -151,16 +169,38 @@ export default function HomeScreen() {
       ) : (
       <main className="home-screen__main">
         <div className="home-screen__header">
-          <h1 className="home-screen__title">클라이밍 잘하고 싶다</h1>
-          <button
-            type="button"
-            className="home-screen__logout"
-            onClick={() => logout()}
-            aria-label="로그아웃"
-          >
-            로그아웃
-          </button>
+          <div className="home-screen__header-title-wrap">
+            <p className="home-screen__title-top">
+              <span className="home-screen__nickname">{nickname}</span>
+              {particle}
+            </p>
+            <h1 className="home-screen__title">클라이밍을 잘하고 싶다</h1>
+          </div>
+          <div className="home-screen__header-actions">
+            <button
+              type="button"
+              className="home-screen__profile-edit"
+              onClick={() => setShowProfileEdit(true)}
+              aria-label="프로필 편집"
+            >
+              ✎
+            </button>
+            <button
+              type="button"
+              className="home-screen__logout"
+              onClick={() => logout()}
+              aria-label="로그아웃"
+            >
+              로그아웃
+            </button>
+          </div>
         </div>
+        {showProfileEdit && (
+          <ProfileEditModal
+            onClose={() => setShowProfileEdit(false)}
+            onSuccess={() => { refetchProfile(); setShowProfileEdit(false) }}
+          />
+        )}
 
         <div className="home-screen__tabs" role="tablist">
           {TABS.map((tab) => (
@@ -173,6 +213,9 @@ export default function HomeScreen() {
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
+              {tab.id === 'schedule' && hasShareBadge && (
+                <span className="home-screen__tab-badge" aria-hidden />
+              )}
             </button>
           ))}
         </div>
@@ -201,7 +244,11 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {activeTab === 'schedule' && <ScheduleView />}
+        {activeTab === 'schedule' && (
+          <Suspense fallback={<div className="home-screen__schedule-skeleton">일정 불러오는 중...</div>}>
+            <ScheduleView hasShareBadge={hasShareBadge} sharedCount={sharedCount} onShareModalOpen={() => markShareModalSeen(sharedCount)} />
+          </Suspense>
+        )}
 
         {activeTab === 'log' && <ExerciseLogView />}
 

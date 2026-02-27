@@ -3,6 +3,180 @@
   padding-bottom: 1rem;
 }
 
+.schedule-view__top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0 0.25rem;
+}
+
+.schedule-view__share-btn {
+  position: relative;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #2d6eff;
+  background: #fff;
+  border: 1px solid #2d6eff;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.schedule-view__share-btn:hover {
+  background: #2d6eff;
+  color: #fff;
+}
+
+.schedule-view__share-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: #ea4335;
+  border-radius: 50%;
+}
+
+.schedule-view__share-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.schedule-view__share-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.schedule-view__share-panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.schedule-view__share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.schedule-view__share-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.schedule-view__share-close {
+  padding: 0.25rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #5f6368;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.schedule-view__share-close:hover {
+  color: #202124;
+}
+
+.schedule-view__team-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.schedule-view__team-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.schedule-view__team-dropdown-wrap {
+  flex: 1;
+  max-width: 200px;
+  position: relative;
+}
+
+.schedule-view__team-combo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: #202124;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.schedule-view__team-combo-btn:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+.schedule-view__team-combo-arrow {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.schedule-view__team-dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0.25rem 0 0 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.schedule-view__team-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #202124;
+}
+
+.schedule-view__team-dropdown-item:hover,
+.schedule-view__team-dropdown-item--selected {
+  background: #f1f3f4;
+}
+
 /* Figma: 일정추가하기 버튼 - 6px radius, 10px font, #2d6eff */
 .schedule-view__add-btn {
   display: flex;

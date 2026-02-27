@@ -91,12 +91,70 @@ export async function saveRecentPlace(userId, placeId) {
   )
 }
 
-// 일정 (월별)
-export function useSchedules(year, month) {
+// 조회 가능한 팀 목록 (내 팀 + 공유 동의된 팀) - AuthContext profile.teams 활용하여 profile 재요청 생략
+export function useSharableTeams() {
+  const { user, profile } = useAuth()
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const myTeamId = profile?.team_id ?? null
+    const myTeam = profile?.teams ?? null
+
+    if (!user?.id || !myTeamId) {
+      setData([])
+      setLoading(false)
+      return
+    }
+    if (!myTeam) {
+      supabase.from('teams').select('id, name').eq('id', myTeamId).single().then(({ data: t }) => {
+        if (t) setData([t])
+        setLoading(false)
+      }).catch(() => {
+        setData([])
+        setLoading(false)
+      })
+      return
+    }
+
+    const run = async () => {
+      const { data: shares } = await supabase
+        .from('team_schedule_shares')
+        .select('team_id, shared_with_team_id')
+        .or(`team_id.eq.${myTeamId},shared_with_team_id.eq.${myTeamId}`)
+      const otherIds = [...new Set((shares ?? []).map((s) => (s.team_id === myTeamId ? s.shared_with_team_id : s.team_id)).filter((id) => id && id !== myTeamId))]
+
+      const teams = [myTeam]
+      if (otherIds.length > 0) {
+        const { data: otherTeams } = await supabase
+          .from('teams')
+          .select('id, name')
+          .in('id', otherIds)
+        ;(otherTeams ?? []).forEach((t) => teams.push(t))
+      }
+      setData(teams)
+      setLoading(false)
+    }
+    run().catch(() => {
+      setData([myTeam])
+      setLoading(false)
+    })
+  }, [user?.id, profile?.team_id, profile?.teams])
+
+  return { data, loading }
+}
+
+// 일정 (월별) - teamId로 팀 필터
+export function useSchedules(year, month, teamId = null) {
   const [data, setData] = useState({})
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
+    if (!teamId) {
+      setData({})
+      setLoading(false)
+      return
+    }
     const start = `${year}-${String(month).padStart(2, '0')}-01`
     const endDate = new Date(year, month, 0)
     const end = `${year}-${String(month).padStart(2, '0')}-${endDate.getDate()}`
@@ -107,9 +165,11 @@ export function useSchedules(year, month) {
         date,
         exercise_type_id,
         place_id,
+        team_id,
         exercise_types(id, day_type_id, name, image_url),
         places(id, name, address, image_url)
       `)
+      .eq('team_id', teamId)
       .gte('date', start)
       .lte('date', end)
       .then(({ data: rows }) => {
@@ -125,7 +185,7 @@ export function useSchedules(year, month) {
         setData(map)
         setLoading(false)
       })
-  }, [year, month])
+  }, [year, month, teamId])
 
   useEffect(() => {
     refetch()
@@ -147,15 +207,15 @@ export function useSchedules(year, month) {
   return { data, loading, refetch }
 }
 
-// 다가오는 원정 일정 (가장 가까운 미래의 expedition 스케줄 1건)
-export function useNextExpedition() {
+// 다가오는 원정 일정 (가장 가까운 미래의 expedition 스케줄 1건) - teamId로 팀 필터
+export function useNextExpedition(teamId = null) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
     const today = getTodayKST()
     setLoading(true)
-    supabase
+    let q = supabase
       .from('schedules')
       .select(`
         date,
@@ -165,7 +225,8 @@ export function useNextExpedition() {
       .gte('date', today)
       .order('date', { ascending: true })
       .limit(50)
-      .then(({ data: rows }) => {
+    if (teamId) q = q.eq('team_id', teamId)
+    q.then(({ data: rows }) => {
         const next = (rows ?? []).find((r) => r.exercise_types?.day_type_id === 'expedition')
         setData(next ?? null)
         setLoading(false)
@@ -211,31 +272,34 @@ function normalizeNextExpedition(row) {
   }
 }
 
-// 오늘 일정 (한국 시간 기준)
-export function useTodaySchedule() {
+// 오늘 일정 (한국 시간 기준) - teamId로 팀 필터
+export function useTodaySchedule(teamId = null) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
     const today = getTodayKST()
     setLoading(true)
-    supabase
+    let q = supabase
       .from('schedules')
       .select(`
         id,
         date,
         exercise_type_id,
         place_id,
+        team_id,
         exercise_types(id, day_type_id, name, image_url, config),
         places(id, name, address, image_url)
       `)
       .eq('date', today)
-      .maybeSingle()
-      .then(({ data: row }) => {
-        setData(row)
+    if (teamId) q = q.eq('team_id', teamId)
+    const finalQ = teamId ? q.maybeSingle() : q.limit(1)
+    finalQ.then(({ data: row }) => {
+        const resolved = Array.isArray(row) ? row[0] ?? null : row
+        setData(resolved)
         setLoading(false)
       })
-  }, [])
+  }, [teamId])
 
   useEffect(() => {
     refetch()
@@ -337,12 +401,13 @@ export function useLatestTrainingRecord(userId, exerciseTypeId, beforeDate = nul
   return { data, loading }
 }
 
-// 훈련 기록 저장
+// 훈련 기록 저장 - teamId 추가 (사용자 소속 팀)
 export async function saveTrainingRecord({
   userId,
   recordDate,
   exerciseTypeId,
   scheduleId,
+  teamId,
   detailType,
   payload,
 }) {
@@ -356,6 +421,7 @@ export async function saveTrainingRecord({
         record_date: dateStr,
         exercise_type_id: exerciseTypeId,
         schedule_id: scheduleId || null,
+        team_id: teamId || null,
         completed_at: new Date().toISOString(),
       },
       { onConflict: 'user_id,record_date,exercise_type_id' }
@@ -548,14 +614,15 @@ export async function getExpeditionExerciseTypeId() {
   return data?.id ?? null
 }
 
-// 일정 추가 (관리자)
-export async function createSchedule({ date, exerciseTypeId, placeId }) {
+// 일정 추가 (관리자) - teamId 필수
+export async function createSchedule({ date, exerciseTypeId, placeId, teamId }) {
+  if (!teamId) throw new Error('teamId is required')
   const dateStr = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
   const { data, error } = await supabase
     .from('schedules')
     .upsert(
-      { date: dateStr, exercise_type_id: exerciseTypeId, place_id: placeId || null },
-      { onConflict: 'date' }
+      { date: dateStr, exercise_type_id: exerciseTypeId, place_id: placeId || null, team_id: teamId },
+      { onConflict: 'team_id,date' }
     )
     .select()
     .single()

@@ -1,7 +1,13 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
-const AuthContext = createContext({ user: null, profile: null, isAdmin: false })
+const AuthContext = createContext({
+  user: null,
+  profile: null,
+  isAdmin: false,
+  isSupervisor: false,
+  teamId: null,
+})
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -9,6 +15,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   const isAdmin = profile?.role === 'admin'
+  const isSupervisor = profile?.role === 'supervisor'
+  const teamId = profile?.team_id ?? null
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -37,11 +45,15 @@ export function AuthProvider({ children }) {
   async function fetchProfile(userId) {
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, teams(id, name)')
       .eq('id', userId)
       .single()
     setProfile(data ?? null)
   }
+
+  const refetchProfile = useCallback(() => {
+    if (user?.id) fetchProfile(user.id)
+  }, [user?.id])
 
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -58,7 +70,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, isAdmin, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, profile, isAdmin, isSupervisor, teamId, login, logout, loading, refetchProfile }}>
       {children}
     </AuthContext.Provider>
   )

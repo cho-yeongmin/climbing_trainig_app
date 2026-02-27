@@ -1,0 +1,226 @@
+.share-request-view {
+  padding: 1rem;
+  color: #202124;
+}
+
+.share-request-view__empty {
+  text-align: center;
+  color: #5f6368;
+  padding: 2rem;
+}
+
+.share-request-view__section {
+  margin-bottom: 2rem;
+}
+
+.share-request-view__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.share-request-view__desc {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: #5f6368;
+  line-height: 1.4;
+}
+
+.share-request-view__send-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.share-request-view__dropdown-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.share-request-view__select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: #202124;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.share-request-view__select-btn:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+.share-request-view__select-arrow {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.share-request-view__dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0.25rem 0 0 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.share-request-view__dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #202124;
+}
+
+.share-request-view__dropdown-item:hover,
+.share-request-view__dropdown-item--selected {
+  background: #f1f3f4;
+}
+
+.share-request-view__btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.share-request-view__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.share-request-view__btn--primary {
+  background: #4285f4;
+  color: #fff;
+}
+
+.share-request-view__btn--primary:hover:not(:disabled) {
+  background: #3367d6;
+}
+
+.share-request-view__btn--accept {
+  background: #34a853;
+  color: #fff;
+}
+
+.share-request-view__btn--accept:hover:not(:disabled) {
+  background: #2d8e47;
+}
+
+.share-request-view__btn--reject {
+  background: #fff;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+}
+
+.share-request-view__btn--reject:hover:not(:disabled) {
+  background: #f8f9fa;
+  color: #202124;
+}
+
+.share-request-view__btn--danger {
+  background: #fff;
+  color: #ea4335;
+  border: 1px solid #ea4335;
+}
+
+.share-request-view__btn--danger:hover:not(:disabled) {
+  background: #ea4335;
+  color: #fff;
+}
+
+.share-request-view__hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
+.share-request-view__loading,
+.share-request-view__empty-row {
+  font-size: 0.875rem;
+  color: #5f6368;
+  padding: 1rem 0;
+}
+
+.share-request-view__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.share-request-view__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #f1f3f4;
+  border-radius: 12px;
+  gap: 1rem;
+}
+
+.share-request-view__item--sent {
+  justify-content: flex-start;
+}
+
+.share-request-view__item-name {
+  font-weight: 500;
+  color: #202124;
+}
+
+.share-request-view__item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.share-request-view__status {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.share-request-view__status--pending {
+  background: #fff8e1;
+  color: #f57c00;
+}
+
+.share-request-view__status--accepted {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.share-request-view__status--rejected {
+  background: #ffebee;
+  color: #c62828;
+}

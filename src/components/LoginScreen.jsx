@@ -25,7 +25,7 @@ export default function LoginScreen() {
   return (
     <div className="login-screen">
       <div className="login-screen__inner">
-        <h1 className="login-screen__title">클라이밍 잘하고 싶다</h1>
+        <h1 className="login-screen__title">클라이밍을 잘하고 싶다</h1>
         <form className="login-screen__form" onSubmit={handleSubmit}>
           <input
             type="email"

@@ -8,7 +8,7 @@ import './AddScheduleView.css'
  * - 장소 및 등반기록: 장소 선택 → LocationSelectView (검색/최근검색 5곳)
  * - 훈련기록: DB exercise_types에서 7가지 훈련 유형 선택
  */
-export default function AddScheduleView({ selectedDate, onClose, onSuccess }) {
+export default function AddScheduleView({ selectedDate, teamId, onClose, onSuccess }) {
   const { data: exerciseTypes } = useExerciseTypes()
   const [selectedTraining, setSelectedTraining] = useState(null)
   const [showTrainingPicker, setShowTrainingPicker] = useState(false)
@@ -44,6 +44,11 @@ export default function AddScheduleView({ selectedDate, onClose, onSuccess }) {
       setError('달력에서 날짜를 선택해주세요.')
       return
     }
+    if (!teamId) {
+      setError('팀 정보를 불러올 수 없습니다.')
+      setSubmitting(false)
+      return
+    }
     if (!selectedPlace && !selectedTraining) {
       setError('장소 또는 운동 중 하나를 선택해주세요.')
       return
@@ -73,6 +78,7 @@ export default function AddScheduleView({ selectedDate, onClose, onSuccess }) {
         date: selectedDate,
         exerciseTypeId,
         placeId: selectedPlace?.id ?? null,
+        teamId: teamId ?? undefined,
       })
       onSuccess?.()
       onClose()
@@ -88,7 +94,7 @@ export default function AddScheduleView({ selectedDate, onClose, onSuccess }) {
       <div className="add-schedule__backdrop" onClick={onClose} aria-hidden />
       <div className="add-schedule__panel">
         <h1 id="add-schedule-title" className="add-schedule__title">
-          클라이밍 잘하고 싶다
+          클라이밍을 잘하고 싶다
         </h1>
 
         {/* 장소 및 등반기록 카드 */}

@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useSchedules } from '../hooks/useSupabase'
+import { useSchedules, useSharableTeams } from '../hooks/useSupabase'
 import AddScheduleView from './AddScheduleView'
+import ShareRequestView from './ShareRequestView'
 import './ScheduleView.css'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
@@ -37,17 +38,33 @@ const MIN_YEAR = 2024
 const MAX_YEAR = 2030
 const SWIPE_THRESHOLD = 50
 
-export default function ScheduleView() {
-  const { isAdmin } = useAuth()
+export default function ScheduleView({ hasShareBadge = false, sharedCount, onShareModalOpen } = {}) {
+  const { isAdmin, isSupervisor, teamId } = useAuth()
+  const { data: sharableTeams } = useSharableTeams()
+  const [selectedTeamId, setSelectedTeamId] = useState(null)
+  const [teamDropdownOpen, setTeamDropdownOpen] = useState(false)
+  const teamDropdownRef = useRef(null)
+
+  useEffect(() => {
+    if (!selectedTeamId && sharableTeams?.length) {
+      setSelectedTeamId(sharableTeams[0].id)
+    }
+  }, [sharableTeams, selectedTeamId])
+
+  const displayTeamId = selectedTeamId ?? teamId ?? sharableTeams?.[0]?.id
+
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [selectedDate, setSelectedDate] = useState(null)
   const [showAddSchedule, setShowAddSchedule] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const swipeStartX = useRef(0)
 
+  const canManageShare = isAdmin || isSupervisor
+
   const grid = useMemo(() => buildCalendarGrid(year, month), [year, month])
-  const { data: scheduleMap, refetch: refetchSchedules } = useSchedules(year, month)
+  const { data: scheduleMap, refetch: refetchSchedules } = useSchedules(year, month, displayTeamId)
 
   const getCellSchedule = (dateNum) => {
     if (!dateNum) return null
@@ -60,6 +77,22 @@ export default function ScheduleView() {
     selectedDate.year === year &&
     selectedDate.month === month &&
     selectedDate.day === dateNum
+
+  useEffect(() => {
+    const fn = (e) => {
+      if (teamDropdownRef.current && !teamDropdownRef.current.contains(e.target)) {
+        setTeamDropdownOpen(false)
+      }
+    }
+    if (teamDropdownOpen) {
+      document.addEventListener('mousedown', fn)
+      document.addEventListener('touchstart', fn)
+      return () => {
+        document.removeEventListener('mousedown', fn)
+        document.removeEventListener('touchstart', fn)
+      }
+    }
+  }, [teamDropdownOpen])
 
   const goPrevMonth = useCallback(() => {
     if (month === 1) {
@@ -100,8 +133,62 @@ export default function ScheduleView() {
     return scheduleMap[dateStr] ?? null
   }, [selectedDate, scheduleMap])
 
+  const canEditSelectedTeam = isAdmin && displayTeamId === teamId
+
   return (
     <div className="schedule-view">
+      <div className="schedule-view__top-row">
+        {sharableTeams?.length > 1 && (
+        <div className="schedule-view__team-select" ref={teamDropdownRef}>
+          <span className="schedule-view__team-label">팀</span>
+          <div className="schedule-view__team-dropdown-wrap">
+            <button
+              type="button"
+              className="schedule-view__team-combo-btn"
+              onClick={() => setTeamDropdownOpen((v) => !v)}
+              aria-label="조회할 팀 선택"
+              aria-expanded={teamDropdownOpen}
+              aria-haspopup="listbox"
+            >
+              {sharableTeams.find((t) => t.id === displayTeamId)?.name ?? '팀 선택'}
+              <span className="schedule-view__team-combo-arrow">{teamDropdownOpen ? '▲' : '▼'}</span>
+            </button>
+            {teamDropdownOpen && (
+              <ul className="schedule-view__team-dropdown-list" role="listbox" aria-label="조회할 팀 목록">
+                {sharableTeams.map((t) => (
+                  <li key={t.id} role="option">
+                    <button
+                      type="button"
+                      className={`schedule-view__team-dropdown-item ${displayTeamId === t.id ? 'schedule-view__team-dropdown-item--selected' : ''}`}
+                      onClick={() => {
+                        setSelectedTeamId(t.id)
+                        setTeamDropdownOpen(false)
+                      }}
+                    >
+                      {t.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        )}
+        {canManageShare && (
+          <button
+            type="button"
+            className="schedule-view__share-btn"
+            onClick={() => {
+              setShowShareModal(true)
+              onShareModalOpen?.()
+            }}
+            aria-label="일정공유 설정"
+          >
+            일정공유
+            {hasShareBadge && <span className="schedule-view__share-badge" aria-hidden />}
+          </button>
+        )}
+      </div>
       <div
         className="schedule-view__calendar-wrap"
         onTouchStart={handleSwipeStart}
@@ -151,7 +238,7 @@ export default function ScheduleView() {
                 {dateNum != null && (
                   <span className="schedule-view__cell-square" aria-hidden>
                     {imageUrl ? (
-                      <img src={imageUrl} alt="" className="schedule-view__cell-img" />
+                      <img src={imageUrl} alt="" className="schedule-view__cell-img" loading="lazy" />
                     ) : null}
                   </span>
                 )}
@@ -218,7 +305,7 @@ export default function ScheduleView() {
         )}
       </div>
 
-      {isAdmin && (
+      {canEditSelectedTeam && (
         <button
           type="button"
           className="schedule-view__add-btn"
@@ -233,12 +320,33 @@ export default function ScheduleView() {
         </button>
       )}
 
-      {isAdmin && showAddSchedule && (
+      {canEditSelectedTeam && showAddSchedule && (
         <AddScheduleView
           selectedDate={selectedDate}
+          teamId={displayTeamId}
           onClose={() => setShowAddSchedule(false)}
           onSuccess={() => refetchSchedules()}
         />
+      )}
+
+      {showShareModal && (
+        <div className="schedule-view__share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+          <div className="schedule-view__share-backdrop" onClick={() => setShowShareModal(false)} aria-hidden />
+          <div className="schedule-view__share-panel">
+            <div className="schedule-view__share-header">
+              <h2 id="share-modal-title" className="schedule-view__share-title">일정공유</h2>
+              <button
+                type="button"
+                className="schedule-view__share-close"
+                onClick={() => setShowShareModal(false)}
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </div>
+            <ShareRequestView />
+          </div>
+        </div>
       )}
     </div>
   )

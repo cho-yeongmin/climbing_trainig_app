@@ -69,7 +69,7 @@ export default function LocationSelectView({ onClose, onSelect }) {
       <div className="location-select__backdrop" onClick={onClose} aria-hidden />
       <div className="location-select__panel">
         <h1 id="location-select-title" className="location-select__title">
-          클라이밍 잘하고 싶다
+          클라이밍을 잘하고 싶다
         </h1>
 
         <form className="location-select__search-form" onSubmit={handleSearchSubmit}>
