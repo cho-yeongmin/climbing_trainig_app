@@ -144,6 +144,11 @@
   text-align: center;
 }
 
+.home-screen__tab--compact {
+  flex: 0 0 auto;
+  min-width: auto;
+}
+
 .home-screen__tab:hover {
   border-color: #b0b4b8;
   color: #202124;
