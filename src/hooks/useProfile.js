@@ -157,6 +157,65 @@ export function useReceivedTeamJoinRequests() {
   return { data, loading, refetch }
 }
 
+// 팀 참가 신청 뱃지 (관리자: 들어온 pending 있으면 프로필 버튼에 빨간점)
+const TEAM_JOIN_BADGE_KEY = 'teamJoinModalLastSeenCount'
+
+export function useTeamJoinBadge() {
+  const { data: received } = useReceivedTeamJoinRequests()
+  const count = received?.length ?? 0
+  const lastSeen = parseInt(localStorage.getItem(TEAM_JOIN_BADGE_KEY) ?? '-1', 10)
+  return { hasBadge: count > 0 && count > lastSeen, count }
+}
+
+export function markTeamJoinModalSeen(count) {
+  localStorage.setItem(TEAM_JOIN_BADGE_KEY, String(count ?? 0))
+}
+
+// 팀원 명단 (본인 팀 또는 일정공유 팀) - RLS '팀원 프로필 읽기' 정책으로 조회
+export function useTeamMembers(teamId) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const refetch = useCallback(() => {
+    if (!teamId) {
+      setData([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    supabase
+      .from('profiles')
+      .select('id, nickname, display_name, boast_info, role')
+      .eq('team_id', teamId)
+      .order('role', { ascending: true, nullsFirst: false })
+      .then(({ data: rows, error }) => {
+        if (error) {
+          setData([])
+        } else {
+          // supervisor, admin, trainee 순으로 정렬
+          const order = { supervisor: 0, admin: 1, trainee: 2 }
+          setData((rows ?? []).sort((a, b) => {
+            const oa = order[a.role] ?? 3
+            const ob = order[b.role] ?? 3
+            if (oa !== ob) return oa - ob
+            return (a.nickname || a.display_name || '').localeCompare(b.nickname || b.display_name || '')
+          }))
+        }
+        setLoading(false)
+      })
+      .catch(() => {
+        setData([])
+        setLoading(false)
+      })
+  }, [teamId])
+
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+
+  return { data, loading, refetch }
+}
+
 export async function sendTeamJoinRequest(userId, fromTeamId, toTeamId) {
   const { error } = await supabase.rpc('send_team_join_request', {
     p_user_id: userId,

@@ -1,0 +1,97 @@
+.profile-view-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.profile-view-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.profile-view-modal__panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.profile-view-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.profile-view-modal__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.profile-view-modal__close {
+  padding: 0.25rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #5f6368;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-view-modal__close:hover {
+  color: #202124;
+}
+
+.profile-view-modal__section {
+  margin-bottom: 1.25rem;
+}
+
+.profile-view-modal__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #5f6368;
+  margin-bottom: 0.5rem;
+}
+
+.profile-view-modal__value {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #202124;
+}
+
+.profile-view-modal__value--multiline {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.profile-view-modal__close-btn {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #fff;
+  background: #4285f4;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.profile-view-modal__close-btn:hover {
+  background: #3367d6;
+}

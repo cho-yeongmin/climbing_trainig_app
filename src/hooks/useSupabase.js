@@ -91,40 +91,42 @@ export async function saveRecentPlace(userId, placeId) {
   )
 }
 
-// 조회 가능한 팀 목록 (내 팀 + 공유 동의된 팀) - AuthContext profile.teams 활용하여 profile 재요청 생략
+// 조회 가능한 팀 목록 (내 팀 + 공유 동의된 팀)
 export function useSharableTeams() {
   const { user, profile } = useAuth()
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+  const myTeamId = profile?.team_id ?? null
 
   useEffect(() => {
-    const myTeamId = profile?.team_id ?? null
-    const myTeam = profile?.teams ?? null
-
     if (!user?.id || !myTeamId) {
       setData([])
       setLoading(false)
       return
     }
-    if (!myTeam) {
-      supabase.from('teams').select('id, name').eq('id', myTeamId).single().then(({ data: t }) => {
-        if (t) setData([t])
-        setLoading(false)
-      }).catch(() => {
-        setData([])
-        setLoading(false)
-      })
-      return
-    }
 
     const run = async () => {
+      // 1. 내 팀 조회 (항상 teams 테이블에서 직접)
+      const { data: myTeam, error: teamErr } = await supabase
+        .from('teams')
+        .select('id, name')
+        .eq('id', myTeamId)
+        .single()
+      if (teamErr || !myTeam) {
+        setData([])
+        setLoading(false)
+        return
+      }
+
+      const teams = [myTeam]
+
+      // 2. 일정공유 팀 조회
       const { data: shares } = await supabase
         .from('team_schedule_shares')
         .select('team_id, shared_with_team_id')
         .or(`team_id.eq.${myTeamId},shared_with_team_id.eq.${myTeamId}`)
       const otherIds = [...new Set((shares ?? []).map((s) => (s.team_id === myTeamId ? s.shared_with_team_id : s.team_id)).filter((id) => id && id !== myTeamId))]
 
-      const teams = [myTeam]
       if (otherIds.length > 0) {
         const { data: otherTeams } = await supabase
           .from('teams')
@@ -136,10 +138,10 @@ export function useSharableTeams() {
       setLoading(false)
     }
     run().catch(() => {
-      setData([myTeam])
+      setData([])
       setLoading(false)
     })
-  }, [user?.id, profile?.team_id, profile?.teams])
+  }, [user?.id, myTeamId])
 
   return { data, loading }
 }
@@ -227,11 +229,11 @@ export function useNextExpedition(teamId = null) {
       .limit(50)
     if (teamId) q = q.eq('team_id', teamId)
     q.then(({ data: rows }) => {
-        const next = (rows ?? []).find((r) => r.exercise_types?.day_type_id === 'expedition')
-        setData(next ?? null)
-        setLoading(false)
-      })
-  }, [])
+      const next = (rows ?? []).find((r) => r.exercise_types?.day_type_id === 'expedition')
+      setData(next ?? null)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [teamId])
 
   useEffect(() => {
     refetch()

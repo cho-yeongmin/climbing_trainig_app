@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useShareBadge, markShareModalSeen } from '../hooks/useShareRequests'
+import { useTeamJoinBadge, markTeamJoinModalSeen } from '../hooks/useProfile'
 import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
 import { getDayContentByType } from '../data/dayContent'
 import { lazy, Suspense } from 'react'
@@ -9,6 +10,7 @@ import ExerciseLogView from './ExerciseLogView'
 import ProfileEditModal from './ProfileEditModal'
 
 const ScheduleView = lazy(() => import('./ScheduleView'))
+const TeamView = lazy(() => import('./TeamView'))
 import SprayWallView from './SprayWallView'
 import TimerView from './TimerView'
 import './HomeScreen.css'
@@ -16,6 +18,7 @@ import './HomeScreen.css'
 const TABS = [
   { id: 'home', label: '홈' },
   { id: 'schedule', label: '일정확인' },
+  { id: 'team', label: '팀' },
   { id: 'log', label: '운동로그' },
   { id: 'spraywall', label: '스프레이월' },
 ]
@@ -111,6 +114,8 @@ export default function HomeScreen() {
 
   const { hasBadge: shareBadgeActive, sharedCount } = useShareBadge()
   const hasShareBadge = (isAdmin || isSupervisor) && shareBadgeActive
+  const { hasBadge: teamJoinBadgeActive, count: teamJoinCount } = useTeamJoinBadge()
+  const hasTeamJoinBadge = (isAdmin || isSupervisor) && teamJoinBadgeActive
 
   const handleSaveRecord = useCallback(
     async (payload, detailType) => {
@@ -180,10 +185,14 @@ export default function HomeScreen() {
             <button
               type="button"
               className="home-screen__profile-edit"
-              onClick={() => setShowProfileEdit(true)}
+              onClick={() => {
+                setShowProfileEdit(true)
+                if (hasTeamJoinBadge && teamJoinCount != null) markTeamJoinModalSeen(teamJoinCount)
+              }}
               aria-label="프로필 편집"
             >
               ✎
+              {hasTeamJoinBadge && <span className="home-screen__tab-badge" aria-hidden />}
             </button>
             <button
               type="button"
@@ -247,6 +256,12 @@ export default function HomeScreen() {
         {activeTab === 'schedule' && (
           <Suspense fallback={<div className="home-screen__schedule-skeleton">일정 불러오는 중...</div>}>
             <ScheduleView hasShareBadge={hasShareBadge} sharedCount={sharedCount} onShareModalOpen={() => markShareModalSeen(sharedCount)} />
+          </Suspense>
+        )}
+
+        {activeTab === 'team' && (
+          <Suspense fallback={<div className="home-screen__schedule-skeleton">불러오는 중...</div>}>
+            <TeamView />
           </Suspense>
         )}
 
