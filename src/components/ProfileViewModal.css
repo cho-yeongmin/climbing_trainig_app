@@ -27,6 +27,23 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
+@media (max-width: 374px) {
+  .profile-view-modal {
+    padding: 0.75rem;
+  }
+  .profile-view-modal__panel {
+    padding: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .profile-view-modal {
+    align-items: center;
+  }
+}
+
 .profile-view-modal__header {
   display: flex;
   align-items: center;
@@ -42,13 +59,18 @@
 }
 
 .profile-view-modal__close {
-  padding: 0.25rem;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
   font-size: 1.25rem;
   line-height: 1;
   color: #5f6368;
   background: none;
   border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-view-modal__close:hover {
@@ -81,6 +103,7 @@
 .profile-view-modal__close-btn {
   width: 100%;
   padding: 0.75rem;
+  min-height: 48px;
   font-size: 1rem;
   font-weight: 500;
   font-family: inherit;

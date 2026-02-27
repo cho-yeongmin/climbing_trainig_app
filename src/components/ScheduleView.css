@@ -1,6 +1,87 @@
 .schedule-view {
   margin-top: 0.25rem;
   padding-bottom: 1rem;
+  display: grid;
+  grid-template-areas:
+    'top'
+    'calendar'
+    'dateinfo';
+  grid-template-rows: auto auto auto;
+  gap: 1rem 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.schedule-view__top-row {
+  grid-area: top;
+}
+
+.schedule-view__calendar-wrap {
+  grid-area: calendar;
+}
+
+.schedule-view__date-info {
+  grid-area: dateinfo;
+}
+
+/* 가로 모드: 달력 + 날짜 정보 나란히 */
+@media (orientation: landscape) and (min-width: 640px) {
+  .schedule-view {
+    grid-template-areas:
+      'top top'
+      'calendar dateinfo';
+    grid-template-columns: 1fr 200px;
+    grid-template-rows: auto auto;
+    gap: 0 1rem;
+  }
+  .schedule-view__date-info {
+    margin-top: 0;
+    align-self: start;
+    min-height: auto;
+  }
+}
+
+/* Tablet: 달력 + 날짜 정보 나란히 */
+@media (min-width: 768px) {
+  .schedule-view {
+    grid-template-areas:
+      'top top'
+      'calendar dateinfo';
+    grid-template-columns: 1fr 220px;
+    grid-template-rows: auto auto;
+    gap: 0 1.5rem;
+  }
+  .schedule-view__date-info {
+    margin-top: 0;
+    align-self: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .schedule-view {
+    grid-template-columns: 1fr 240px;
+    gap: 0 2rem;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .schedule-view {
+    margin-top: 0;
+    padding-bottom: 0.5rem;
+  }
+  .schedule-view__top-row {
+    margin-bottom: 0.5rem;
+  }
+  .schedule-view__calendar-wrap {
+    padding: 10px;
+  }
+  .schedule-view__body {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+  .schedule-view__date-info {
+    margin-top: 10px;
+  }
 }
 
 .schedule-view__top-row {
@@ -14,6 +95,7 @@
 .schedule-view__share-btn {
   position: relative;
   padding: 0.5rem 1rem;
+  min-height: 44px;
   font-size: 0.875rem;
   font-family: inherit;
   font-weight: 500;
@@ -84,13 +166,18 @@
 }
 
 .schedule-view__share-close {
-  padding: 0.25rem;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
   font-size: 1.25rem;
   line-height: 1;
   color: #5f6368;
   background: none;
   border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .schedule-view__share-close:hover {
@@ -185,9 +272,9 @@
   gap: 4px;
   width: 100%;
   margin-top: 16px;
-  padding: 8px 10px;
-  min-height: 30px;
-  font-size: 10px;
+  padding: 10px 12px;
+  min-height: 44px;
+  font-size: 12px;
   font-weight: 500;
   font-family: inherit;
   color: #2d6eff;
@@ -243,15 +330,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   font-size: 1rem;
   font-weight: 600;
   color: #5f6368;
   background: none;
   border: none;
-  border-radius: 0;
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
@@ -275,7 +364,7 @@
 
 /* Figma: 날짜 정보 카드 h 52px, 8px radius */
 .schedule-view__date-info {
-  margin-top: 16px;
+  margin-top: 0; /* grid gap 사용 */
   min-height: 52px;
 }
 
@@ -629,6 +718,22 @@
   padding: 1rem 1.25rem;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   overflow-y: auto;
+}
+
+@media (max-width: 374px) {
+  .schedule-view__day-panel {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .schedule-view__day-modal {
+    align-items: center;
+  }
+  .schedule-view__day-panel {
+    border-radius: 12px;
+    max-height: 80vh;
+  }
 }
 
 .schedule-view__day-list {

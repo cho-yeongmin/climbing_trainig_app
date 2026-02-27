@@ -1,6 +1,27 @@
 .share-request-view {
   padding: 1rem;
   color: #202124;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 374px) {
+  .share-request-view {
+    padding: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .share-request-view {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .share-request-view {
+    max-width: 560px;
+  }
 }
 
 .share-request-view__empty {
@@ -45,6 +66,7 @@
   justify-content: space-between;
   width: 100%;
   padding: 0.5rem 0.75rem;
+  min-height: 44px;
   font-size: 0.9375rem;
   font-family: inherit;
   color: #202124;
@@ -103,6 +125,7 @@
 
 .share-request-view__btn {
   padding: 0.5rem 1rem;
+  min-height: 44px;
   font-size: 0.875rem;
   font-family: inherit;
   font-weight: 500;

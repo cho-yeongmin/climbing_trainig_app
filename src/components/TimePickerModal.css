@@ -13,10 +13,17 @@
   border-radius: 12px;
   padding: 1rem;
   max-width: 320px;
-  width: 90%;
+  width: min(90vw, 320px);
   max-height: 80vh;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #f1f3f4;
+}
+
+@media (max-width: 374px) {
+  .time-picker-modal {
+    width: calc(100vw - 2rem);
+    padding: 0.75rem;
+  }
 }
 
 .time-picker-header {
@@ -35,6 +42,7 @@
 
 .time-picker-btn {
   padding: 0.5rem 0.75rem;
+  min-height: 44px;
   font-size: 0.875rem;
   font-family: inherit;
   border: none;

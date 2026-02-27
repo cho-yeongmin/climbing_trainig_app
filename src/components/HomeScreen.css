@@ -6,15 +6,106 @@
 }
 
 .home-screen__main {
-  padding: 0 1.25rem 2rem;
-  max-width: 480px;
+  padding: 0 1rem 2rem;
+  max-width: 100%;
   margin: 0 auto;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 480px) {
+  .home-screen__main {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    max-width: 480px;
+  }
+}
+
+@media (min-width: 768px) {
   .home-screen__main {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-screen__main {
+    padding-left: 2rem;
+    padding-right: 2rem;
+    max-width: 720px;
+  }
+}
+
+/* 가로 모드: 넓은 화면 활용 */
+@media (orientation: landscape) {
+  .home-screen__main {
+    max-width: 90%;
+    padding-bottom: 1rem;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 640px) {
+  .home-screen__main {
+    max-width: 900px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .home-screen__main {
+    padding-top: 0.5rem;
+    padding-bottom: 0.75rem;
+  }
+  .home-screen__header {
+    margin-bottom: 0.75rem;
+  }
+  .home-screen__title-top,
+  .home-screen__title {
+    font-size: 1.25rem !important;
+  }
+  .home-screen__tabs {
+    margin-bottom: 0.75rem;
+  }
+  .home-screen__cards {
+    gap: 0.75rem;
+  }
+  .home-screen__schedule-block {
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 640px) {
+  .home-screen__cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .home-screen__schedule-block {
+    margin-bottom: 0;
+  }
+  .home-screen__schedule-block:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-screen__cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .home-screen__schedule-block {
+    margin-bottom: 0;
+  }
+  .home-screen__schedule-block:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-screen__cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
   }
 }
 
@@ -73,6 +164,8 @@
 .home-screen__profile-edit {
   position: relative;
   padding: 0.5rem 0.6rem;
+  min-height: 44px;
+  min-width: 44px;
   font-size: 1rem;
   font-family: inherit;
   color: #4285f4;
@@ -95,6 +188,7 @@
 
 .home-screen__logout {
   padding: 0.5rem 0.75rem;
+  min-height: 44px;
   font-size: 0.875rem;
   font-family: inherit;
   color: #4285f4;
@@ -128,7 +222,8 @@
 .home-screen__tab {
   flex: 1 1 0;
   min-width: 0;
-  padding: 0.45rem 0.5rem;
+  padding: 0.6rem 0.5rem;
+  min-height: 44px;
   font-size: 0.8125rem;
   font-weight: 500;
   font-family: inherit;
@@ -191,6 +286,17 @@
 @media (min-width: 480px) {
   .home-screen__tab {
     padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 374px) {
+  .home-screen__main {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .home-screen__title-top,
+  .home-screen__title {
+    font-size: 1.25rem !important;
   }
 }
 
@@ -326,7 +432,8 @@
 .timer-fullscreen__close {
   flex-shrink: 0;
   margin: 1rem;
-  padding: 1rem;
+  padding: 1rem 1.5rem;
+  min-height: 48px;
   font-size: 1rem;
   font-weight: 500;
   font-family: inherit;

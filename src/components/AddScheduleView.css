@@ -29,6 +29,27 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
+@media (max-width: 374px) {
+  .add-schedule {
+    padding: 0.75rem;
+  }
+  .add-schedule__panel {
+    padding: 1rem 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .add-schedule {
+    align-items: center;
+  }
+  .add-schedule__panel {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+}
+
 .add-schedule__title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -83,6 +104,7 @@
   gap: 0.375rem;
   width: 100%;
   padding: 0.875rem 1rem;
+  min-height: 44px;
   font-size: 0.9375rem;
   font-weight: 500;
   font-family: inherit;
@@ -168,6 +190,7 @@
   width: 100%;
   margin-top: 1rem;
   padding: 0.875rem 1rem;
+  min-height: 48px;
   font-size: 0.9375rem;
   font-weight: 600;
   font-family: inherit;
