@@ -113,13 +113,23 @@
 
 .home-screen__tabs {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
   margin-bottom: 1.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.home-screen__tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .home-screen__tab {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   font-family: inherit;
   color: #5f6368;
@@ -128,6 +138,10 @@
   border-radius: 999px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
 .home-screen__tab:hover {
@@ -157,6 +171,22 @@
 
 .home-screen__tab--active .home-screen__tab-badge {
   background: #fff;
+}
+
+@media (min-width: 400px) {
+  .home-screen__tabs {
+    gap: 0.5rem;
+  }
+  .home-screen__tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 480px) {
+  .home-screen__tab {
+    padding: 0.5rem 1rem;
+  }
 }
 
 .home-screen__preview {
