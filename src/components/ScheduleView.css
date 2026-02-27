@@ -486,6 +486,7 @@
 
 /* Figma: 회색 사각형 #d9d9d9, 6px radius */
 .schedule-view__cell-square {
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
   background: #d9d9d9;
@@ -520,4 +521,218 @@
 
 .schedule-view__cell--empty .schedule-view__cell-num--empty {
   display: none;
+}
+
+/* 내 일정 모드: 팀별 모서리 삼각형 */
+.schedule-view__cell-corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.schedule-view__cell-corners--overlay {
+  z-index: 1;
+}
+
+.schedule-view__cell-corner {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.schedule-view__cell-corner--tl {
+  top: 0;
+  left: 0;
+  border-width: 8px 8px 0 0;
+  border-top-color: var(--team-color);
+  border-right-color: transparent;
+}
+
+.schedule-view__cell-corner--tr {
+  top: 0;
+  right: 0;
+  border-width: 8px 0 0 8px;
+  border-top-color: var(--team-color);
+  border-left-color: transparent;
+}
+
+.schedule-view__cell-corner--bl {
+  bottom: 0;
+  left: 0;
+  border-width: 0 8px 8px 0;
+  border-bottom-color: var(--team-color);
+  border-right-color: transparent;
+}
+
+.schedule-view__cell-corner--br {
+  bottom: 0;
+  right: 0;
+  border-width: 0 0 8px 8px;
+  border-bottom-color: var(--team-color);
+  border-left-color: transparent;
+}
+
+/* 내 일정 요약 (클릭하여 편집) */
+.schedule-view__my-summary {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: #202124;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.schedule-view__my-summary:hover {
+  background: #f8f9fa;
+}
+
+.schedule-view__my-summary-count {
+  font-weight: 600;
+}
+
+.schedule-view__my-summary-hint {
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.schedule-view__info-empty--clickable {
+  cursor: pointer;
+}
+
+.schedule-view__info-empty--clickable:hover {
+  background: #f8f9fa;
+}
+
+/* 일자별 일정 모달 */
+.schedule-view__day-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.schedule-view__day-panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+}
+
+.schedule-view__day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.schedule-view__day-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.schedule-view__day-item input[type="checkbox"] {
+  flex-shrink: 0;
+}
+
+.schedule-view__day-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.schedule-view__day-dot--personal {
+  background: #9e9e9e !important;
+}
+
+.schedule-view__day-team {
+  font-size: 0.75rem;
+  color: #5f6368;
+  min-width: 4rem;
+}
+
+.schedule-view__day-title {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #202124;
+}
+
+.schedule-view__day-item--personal {
+  cursor: default;
+}
+
+.schedule-view__day-delete {
+  font-size: 0.75rem;
+  color: #d93025;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+
+.schedule-view__day-delete:hover {
+  text-decoration: underline;
+}
+
+.schedule-view__day-empty {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #5f6368;
+  text-align: center;
+}
+
+.schedule-view__apply-selected-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #fff;
+  background: #2d6eff;
+  border: 1px solid #2d6eff;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.schedule-view__apply-selected-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.schedule-view__add-personal-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #2d6eff;
+  background: #fff;
+  border: 1px solid #2d6eff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.schedule-view__add-personal-btn:hover {
+  background: #2d6eff;
+  color: #fff;
 }

@@ -1,43 +1,42 @@
-import { useState, useEffect } from 'react'
-import { useExerciseTypes, createSchedule, getExpeditionExerciseTypeId } from '../hooks/useSupabase'
+import { useState } from 'react'
+import { useExerciseTypes, createSchedules, getExpeditionExerciseTypeId } from '../hooks/useSupabase'
 import LocationSelectView from './LocationSelectView'
 import './AddScheduleView.css'
 
 /**
- * 관리자용 일정 추가 페이지 (Figma: 일정추가하기 클릭 시 표시)
- * - 장소 및 등반기록: 장소 선택 → LocationSelectView (검색/최근검색 5곳)
- * - 훈련기록: DB exercise_types에서 7가지 훈련 유형 선택
+ * 관리자용 일정 추가 - 장소/훈련 복수 선택
  */
 export default function AddScheduleView({ selectedDate, teamId, onClose, onSuccess }) {
   const { data: exerciseTypes } = useExerciseTypes()
-  const [selectedTraining, setSelectedTraining] = useState(null)
+  const [selectedPlaces, setSelectedPlaces] = useState([])
+  const [selectedTrainings, setSelectedTrainings] = useState([])
   const [showTrainingPicker, setShowTrainingPicker] = useState(false)
-  const [selectedPlace, setSelectedPlace] = useState(null)
   const [showLocationSelect, setShowLocationSelect] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  const getExpeditionType = () =>
+    (exerciseTypes ?? []).find((t) => String(t.day_type_id || '').toLowerCase() === 'expedition')
+
+  const handlePlaceSelect = (place) => {
+    if (selectedPlaces.some((p) => p.id === place.id)) return
+    setSelectedPlaces((prev) => [...prev, place])
+    setShowLocationSelect(false)
+  }
+
+  const handleRemovePlace = (id) => {
+    setSelectedPlaces((prev) => prev.filter((p) => p.id !== id))
+  }
+
   const handleTrainingSelect = (type) => {
-    setSelectedTraining(type)
-    setSelectedPlace(null) // 운동 선택 시 장소 해제 (하나만 선택)
+    if (selectedTrainings.some((t) => t.id === type.id)) return
+    setSelectedTrainings((prev) => [...prev, type])
     setShowTrainingPicker(false)
   }
 
-  const getExpeditionType = () =>
-    exerciseTypes.find((t) => String(t.day_type_id || '').toLowerCase() === 'expedition')
-
-  const handlePlaceSelect = (place) => {
-    setSelectedPlace(place)
-    setSelectedTraining(getExpeditionType() ?? null) // 장소 선택 시 '원정가는 날'로 설정
+  const handleRemoveTraining = (id) => {
+    setSelectedTrainings((prev) => prev.filter((t) => t.id !== id))
   }
-
-  // 장소만 선택된 상태에서 exerciseTypes가 로드되면 '원정가는 날' 자동 설정
-  useEffect(() => {
-    if (selectedPlace && !selectedTraining && exerciseTypes.length > 0) {
-      const expedition = getExpeditionType()
-      if (expedition) setSelectedTraining(expedition)
-    }
-  }, [selectedPlace, selectedTraining, exerciseTypes])
 
   const handleSubmit = async () => {
     if (!selectedDate) {
@@ -46,40 +45,33 @@ export default function AddScheduleView({ selectedDate, teamId, onClose, onSucce
     }
     if (!teamId) {
       setError('팀 정보를 불러올 수 없습니다.')
-      setSubmitting(false)
       return
     }
-    if (!selectedPlace && !selectedTraining) {
-      setError('장소 또는 운동 중 하나를 선택해주세요.')
+    if (selectedPlaces.length === 0 && selectedTrainings.length === 0) {
+      setError('장소 또는 훈련을 1개 이상 선택해주세요.')
       return
     }
     setError('')
     setSubmitting(true)
     try {
-      let exerciseTypeId = selectedTraining?.id
-      // 장소만 선택한 경우: DB에서 '원정가는 날' id 직접 조회
-      if (!exerciseTypeId && selectedPlace) {
-        const fromList = exerciseTypes.find((t) => (t.day_type_id || '').toString() === 'expedition')
-        exerciseTypeId = fromList?.id ?? null
-        if (!exerciseTypeId) {
-          exerciseTypeId = await getExpeditionExerciseTypeId()
-        }
+      const expedition = getExpeditionType()
+      let expeditionId = expedition?.id
+      if (!expeditionId && selectedPlaces.length > 0) {
+        expeditionId = await getExpeditionExerciseTypeId()
       }
-      if (!exerciseTypeId) {
-        setError(
-          selectedPlace
-            ? '원정(원정가는 날) 정보를 불러올 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.'
-            : '운동을 선택해주세요.'
-        )
+      if (selectedPlaces.length > 0 && !expeditionId) {
+        setError('원정(원정가는 날) 정보를 불러올 수 없습니다.')
         setSubmitting(false)
         return
       }
-      await createSchedule({
-        date: selectedDate,
-        exerciseTypeId,
-        placeId: selectedPlace?.id ?? null,
-        teamId: teamId ?? undefined,
+      const items = []
+      selectedPlaces.forEach((p) => {
+        items.push({ placeId: p.id, exerciseTypeId: expeditionId })
       })
+      selectedTrainings.forEach((t) => {
+        items.push({ placeId: null, exerciseTypeId: t.id })
+      })
+      await createSchedules(teamId, selectedDate, items)
       onSuccess?.()
       onClose()
     } catch (err) {
@@ -97,35 +89,33 @@ export default function AddScheduleView({ selectedDate, teamId, onClose, onSucce
           클라이밍을 잘하고 싶다
         </h1>
 
-        {/* 장소 및 등반기록 카드 */}
+        {/* 장소 및 등반기록 카드 - 복수 선택 */}
         <section className="add-schedule__card">
-          <h2 className="add-schedule__card-title">장소 및 등반기록</h2>
+          <h2 className="add-schedule__card-title">장소 및 등반기록 (복수 선택 가능)</h2>
           <button
             type="button"
             className="add-schedule__select-btn add-schedule__select-btn--place"
             onClick={() => setShowLocationSelect(true)}
-            aria-label={selectedPlace ? `${selectedPlace.name} 변경` : '장소를 선택해주세요'}
+            aria-label="장소 추가"
           >
-            {selectedPlace?.image_url ? (
-              <img
-                src={selectedPlace.image_url}
-                alt=""
-                className="add-schedule__place-thumb"
-              />
-            ) : (
-              <span className="add-schedule__select-btn-icon">
-                {selectedPlace ? '✓' : '+'}
-              </span>
-            )}
-            <span className="add-schedule__select-btn-text">
-              {selectedPlace ? selectedPlace.name : '장소를 선택해주세요.'}
-            </span>
+            <span className="add-schedule__select-btn-icon">+</span>
+            <span className="add-schedule__select-btn-text">장소 추가</span>
           </button>
+          {selectedPlaces.length > 0 && (
+            <ul className="add-schedule__chips">
+              {selectedPlaces.map((p) => (
+                <li key={p.id} className="add-schedule__chip">
+                  <span>{p.name}</span>
+                  <button type="button" onClick={() => handleRemovePlace(p.id)} aria-label="제거">×</button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
-        {/* 훈련기록 카드 */}
+        {/* 훈련기록 카드 - 복수 선택 */}
         <section className="add-schedule__card add-schedule__card--training">
-          <h2 className="add-schedule__card-title">훈련기록</h2>
+          <h2 className="add-schedule__card-title">훈련기록 (복수 선택 가능)</h2>
           <div className="add-schedule__training-wrap">
             <button
               type="button"
@@ -133,28 +123,31 @@ export default function AddScheduleView({ selectedDate, teamId, onClose, onSucce
               onClick={() => setShowTrainingPicker((v) => !v)}
               aria-expanded={showTrainingPicker}
               aria-haspopup="listbox"
-              aria-label={selectedTraining ? selectedTraining.name : '훈련을 선택해주세요'}
             >
-              <span className="add-schedule__select-btn-icon">
-                {selectedTraining ? '✓' : '+'}
-              </span>
-              {selectedTraining ? selectedTraining.name : '훈련을 선택해주세요.'}
+              <span className="add-schedule__select-btn-icon">+</span>
+              훈련 유형 추가
             </button>
             {showTrainingPicker && (
-              <ul
-                className="add-schedule__training-list"
-                role="listbox"
-                aria-label="훈련 유형 선택"
-              >
-                {exerciseTypes.map((type) => (
-                  <li key={type.id} role="option" aria-selected={selectedTraining?.id === type.id}>
+              <ul className="add-schedule__training-list" role="listbox">
+                {(exerciseTypes ?? []).map((type) => (
+                  <li key={type.id} role="option">
                     <button
                       type="button"
-                      className={`add-schedule__training-item ${selectedTraining?.id === type.id ? 'add-schedule__training-item--selected' : ''}`}
+                      className={`add-schedule__training-item ${selectedTrainings.some((t) => t.id === type.id) ? 'add-schedule__training-item--selected' : ''}`}
                       onClick={() => handleTrainingSelect(type)}
                     >
                       {type.name}
                     </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {selectedTrainings.length > 0 && (
+              <ul className="add-schedule__chips">
+                {selectedTrainings.map((t) => (
+                  <li key={t.id} className="add-schedule__chip">
+                    <span>{t.name}</span>
+                    <button type="button" onClick={() => handleRemoveTraining(t.id)} aria-label="제거">×</button>
                   </li>
                 ))}
               </ul>

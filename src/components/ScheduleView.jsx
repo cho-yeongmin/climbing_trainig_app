@@ -1,9 +1,33 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useSchedules, useSharableTeams } from '../hooks/useSupabase'
+import {
+  useSchedules,
+  useSharableTeams,
+  useSchedulesMultiTeam,
+  useMyScheduleSelections,
+  useMyPersonalSchedules,
+  addToMySchedule,
+  removeFromMySchedule,
+  deletePersonalSchedule,
+} from '../hooks/useSupabase'
+import { useTeamMembers } from '../hooks/useProfile'
 import AddScheduleView from './AddScheduleView'
+import AddPersonalScheduleView from './AddPersonalScheduleView'
 import ShareRequestView from './ShareRequestView'
 import './ScheduleView.css'
+
+const MY_SCHEDULE_ID = 'my'
+const TEAM_DOT_COLORS = ['#ea4335', '#4285f4', '#34a853', '#fbbc04', '#9c27b0', '#00acc1', '#ff7043']
+
+/** 장소 썸네일 우선, 없으면 훈련 썸네일. 순서대로 first place, first training */
+function getThumbnailForItems(items) {
+  if (!items?.length) return null
+  const firstPlace = items.find((i) => i?.place?.image_url || i?.schedule?.place?.image_url)
+  if (firstPlace) return (firstPlace.place || firstPlace.schedule?.place)?.image_url
+  const firstEx = items.find((i) => i?.exerciseType?.image_url || i?.schedule?.exerciseType?.image_url)
+  if (firstEx) return (firstEx.exerciseType || firstEx.schedule?.exerciseType)?.image_url
+  return null
+}
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
 
@@ -39,19 +63,32 @@ const MAX_YEAR = 2030
 const SWIPE_THRESHOLD = 50
 
 export default function ScheduleView({ hasShareBadge = false, sharedCount, onShareModalOpen } = {}) {
-  const { isAdmin, isSupervisor, teamId } = useAuth()
+  const { user, isAdmin, isSupervisor, teamId } = useAuth()
   const { data: sharableTeams } = useSharableTeams()
-  const [selectedTeamId, setSelectedTeamId] = useState(null)
+  const [selectedTeamId, setSelectedTeamId] = useState(MY_SCHEDULE_ID)
+  const [viewingUserId, setViewingUserId] = useState(null) // null = 내 일정(본인)
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false)
+  const [memberDropdownOpen, setMemberDropdownOpen] = useState(false)
   const teamDropdownRef = useRef(null)
+  const memberDropdownRef = useRef(null)
+
+  const { data: teamMembers } = useTeamMembers(teamId)
+  const isMyScheduleMode = selectedTeamId === MY_SCHEDULE_ID
+  const displayTeamId = isMyScheduleMode ? null : (selectedTeamId ?? teamId ?? sharableTeams?.[0]?.id)
+  const scheduleOwnerId = viewingUserId ?? user?.id
+  const isViewingSelf = scheduleOwnerId === user?.id
 
   useEffect(() => {
-    if (!selectedTeamId && sharableTeams?.length) {
-      setSelectedTeamId(sharableTeams[0].id)
+    if (selectedTeamId === null && sharableTeams?.length) {
+      setSelectedTeamId(MY_SCHEDULE_ID)
     }
   }, [sharableTeams, selectedTeamId])
 
-  const displayTeamId = selectedTeamId ?? teamId ?? sharableTeams?.[0]?.id
+  useEffect(() => {
+    if (isMyScheduleMode && user?.id && (viewingUserId === null || viewingUserId === undefined)) {
+      setViewingUserId(user.id)
+    }
+  }, [isMyScheduleMode, user?.id, viewingUserId])
 
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -65,12 +102,40 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
 
   const grid = useMemo(() => buildCalendarGrid(year, month), [year, month])
   const { data: scheduleMap, refetch: refetchSchedules } = useSchedules(year, month, displayTeamId)
+  const teamIds = useMemo(() => (sharableTeams ?? []).map((t) => t.id), [sharableTeams])
+  const { data: multiScheduleMap, refetch: refetchMulti } = useSchedulesMultiTeam(year, month, isMyScheduleMode ? teamIds : [])
+  const { selectedIds: mySelectedIds, refetch: refetchMySelections } = useMyScheduleSelections(scheduleOwnerId)
+  const { data: personalMap, refetch: refetchPersonal } = useMyPersonalSchedules(scheduleOwnerId, year, month)
 
-  const getCellSchedule = (dateNum) => {
-    if (!dateNum) return null
+  const getCellSchedules = (dateNum) => {
+    if (!dateNum) return []
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
-    return scheduleMap[dateStr]
+    const arr = scheduleMap?.[dateStr]
+    return Array.isArray(arr) ? arr : (arr ? [arr] : [])
   }
+
+  const getCellMyItems = (dateNum) => {
+    if (!dateNum || !isMyScheduleMode) return { team: [], personal: [] }
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
+    const teamSchedules = (multiScheduleMap?.[dateStr] ?? []).filter(({ id }) => mySelectedIds?.has?.(id) ?? false)
+    const personal = personalMap?.[dateStr] ?? []
+    return {
+      team: teamSchedules.map(({ id, schedule, teamId }) => ({ id, schedule, teamId })),
+      personal,
+    }
+  }
+
+  const getCellSchedulesForMyMode = (dateNum) => {
+    if (!dateNum) return []
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
+    return multiScheduleMap?.[dateStr] ?? []
+  }
+
+  const teamColorByIndex = useMemo(() => {
+    const m = {}
+    ;(sharableTeams ?? []).forEach((t, i) => { m[t.id] = TEAM_DOT_COLORS[i % TEAM_DOT_COLORS.length] })
+    return m
+  }, [sharableTeams])
 
   const isSelected = (dateNum) =>
     selectedDate &&
@@ -83,8 +148,11 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
       if (teamDropdownRef.current && !teamDropdownRef.current.contains(e.target)) {
         setTeamDropdownOpen(false)
       }
+      if (memberDropdownRef.current && !memberDropdownRef.current.contains(e.target)) {
+        setMemberDropdownOpen(false)
+      }
     }
-    if (teamDropdownOpen) {
+    if (teamDropdownOpen || memberDropdownOpen) {
       document.addEventListener('mousedown', fn)
       document.addEventListener('touchstart', fn)
       return () => {
@@ -130,32 +198,128 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
   const selectedSchedule = useMemo(() => {
     if (!selectedDate) return null
     const dateStr = `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
-    return scheduleMap[dateStr] ?? null
+    const arr = scheduleMap?.[dateStr]
+    const list = Array.isArray(arr) ? arr : (arr ? [arr] : [])
+    return list[0] ?? null
   }, [selectedDate, scheduleMap])
 
+  const selectedDayMyItems = useMemo(() => {
+    if (!selectedDate || !isMyScheduleMode) return { team: [], personal: [] }
+    const dateStr = `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
+    const teamSchedules = (multiScheduleMap?.[dateStr] ?? []).filter(({ id }) => mySelectedIds?.has?.(id) ?? false)
+    const personal = personalMap?.[dateStr] ?? []
+    return {
+      team: teamSchedules.map(({ id, schedule, teamId }) => ({
+        id,
+        schedule,
+        teamId,
+        teamName: sharableTeams?.find((t) => t.id === teamId)?.name ?? '',
+      })),
+      personal,
+    }
+  }, [selectedDate, isMyScheduleMode, multiScheduleMap, personalMap, mySelectedIds, sharableTeams])
+
+  const selectedDayAllTeamSchedules = useMemo(() => {
+    if (!selectedDate || !isMyScheduleMode) return []
+    const dateStr = `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
+    return (multiScheduleMap?.[dateStr] ?? []).map(({ id, schedule, teamId }) => ({
+      id,
+      schedule,
+      teamId,
+      teamName: sharableTeams?.find((t) => t.id === teamId)?.name ?? '',
+      inMySchedule: mySelectedIds.has(id),
+    }))
+  }, [selectedDate, isMyScheduleMode, multiScheduleMap, mySelectedIds, sharableTeams])
+
+  const [showDayModal, setShowDayModal] = useState(false)
+  const [showAddPersonal, setShowAddPersonal] = useState(false)
+  const [dayModalCheckedIds, setDayModalCheckedIds] = useState(new Set())
+
+  useEffect(() => {
+    if (selectedDate && isMyScheduleMode) setShowDayModal(true)
+    else setShowDayModal(false)
+  }, [selectedDate, isMyScheduleMode])
+
+  // 모달 열릴 때 선택 상태 초기화
+  useEffect(() => {
+    if (showDayModal && selectedDate && isViewingSelf) {
+      const dateStr = `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
+      const dayScheduleIds = (multiScheduleMap?.[dateStr] ?? []).map((s) => s.id)
+      setDayModalCheckedIds(
+        new Set(dayScheduleIds.filter((id) => mySelectedIds.has(id)))
+      )
+    }
+  }, [showDayModal, selectedDate, isViewingSelf, multiScheduleMap, mySelectedIds])
+
+  const handleDayModalCheckboxChange = useCallback((scheduleId, checked) => {
+    setDayModalCheckedIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(scheduleId)
+      else next.delete(scheduleId)
+      return next
+    })
+  }, [])
+
+  const handleApplySelectedSchedules = useCallback(async () => {
+    if (!user?.id || !selectedDate) return
+    const dateStr = `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
+    const dayScheduleIds = (multiScheduleMap?.[dateStr] ?? []).map((s) => s.id)
+    try {
+      for (const id of dayScheduleIds) {
+        const shouldBeIn = dayModalCheckedIds.has(id)
+        const isIn = mySelectedIds.has(id)
+        if (shouldBeIn && !isIn) await addToMySchedule(user.id, id)
+        if (!shouldBeIn && isIn) await removeFromMySchedule(user.id, id)
+      }
+      refetchMySelections()
+    } catch (e) {
+      console.error('선택한 일정 추가 실패', e)
+    }
+  }, [user?.id, selectedDate, multiScheduleMap, dayModalCheckedIds, mySelectedIds, refetchMySelections])
+
+  const handleDeletePersonal = useCallback(async (id) => {
+    try {
+      await deletePersonalSchedule(id)
+      refetchPersonal()
+    } catch (e) {
+      console.error('개인 일정 삭제 실패', e)
+    }
+  }, [refetchPersonal])
+
   const canEditSelectedTeam = isAdmin && displayTeamId === teamId
+  const selectedDateStr = selectedDate
+    ? `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
+    : null
 
   return (
     <div className="schedule-view">
       <div className="schedule-view__top-row">
-        {sharableTeams?.length > 1 && (
         <div className="schedule-view__team-select" ref={teamDropdownRef}>
-          <span className="schedule-view__team-label">팀</span>
+          <span className="schedule-view__team-label">일정</span>
           <div className="schedule-view__team-dropdown-wrap">
             <button
               type="button"
               className="schedule-view__team-combo-btn"
               onClick={() => setTeamDropdownOpen((v) => !v)}
-              aria-label="조회할 팀 선택"
+              aria-label="조회할 일정 선택"
               aria-expanded={teamDropdownOpen}
               aria-haspopup="listbox"
             >
-              {sharableTeams.find((t) => t.id === displayTeamId)?.name ?? '팀 선택'}
+              {isMyScheduleMode ? '내 일정' : (sharableTeams?.find((t) => t.id === displayTeamId)?.name ?? '팀 선택')}
               <span className="schedule-view__team-combo-arrow">{teamDropdownOpen ? '▲' : '▼'}</span>
             </button>
             {teamDropdownOpen && (
-              <ul className="schedule-view__team-dropdown-list" role="listbox" aria-label="조회할 팀 목록">
-                {sharableTeams.map((t) => (
+              <ul className="schedule-view__team-dropdown-list" role="listbox" aria-label="조회할 일정 목록">
+                <li role="option">
+                  <button
+                    type="button"
+                    className={`schedule-view__team-dropdown-item ${isMyScheduleMode ? 'schedule-view__team-dropdown-item--selected' : ''}`}
+                    onClick={() => { setSelectedTeamId(MY_SCHEDULE_ID); setTeamDropdownOpen(false) }}
+                  >
+                    내 일정
+                  </button>
+                </li>
+                {sharableTeams?.map((t) => (
                   <li key={t.id} role="option">
                     <button
                       type="button"
@@ -168,11 +332,53 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
                       {t.name}
                     </button>
                   </li>
-                ))}
+                )) ?? null}
               </ul>
             )}
           </div>
         </div>
+        {isMyScheduleMode && teamId && (teamMembers?.length ?? 0) > 1 && (
+          <div className="schedule-view__team-select schedule-view__member-select" ref={memberDropdownRef}>
+            <span className="schedule-view__team-label">보기</span>
+            <div className="schedule-view__team-dropdown-wrap">
+              <button
+                type="button"
+                className="schedule-view__team-combo-btn"
+                onClick={() => setMemberDropdownOpen((v) => !v)}
+                aria-label="일정 보기 대상 선택"
+                aria-expanded={memberDropdownOpen}
+              >
+                {isViewingSelf ? '나' : (teamMembers?.find((m) => m.id === scheduleOwnerId)?.nickname || teamMembers?.find((m) => m.id === scheduleOwnerId)?.display_name || '팀원')}
+                <span className="schedule-view__team-combo-arrow">{memberDropdownOpen ? '▲' : '▼'}</span>
+              </button>
+              {memberDropdownOpen && (
+                <ul className="schedule-view__team-dropdown-list" role="listbox">
+                  <li role="option">
+                    <button
+                      type="button"
+                      className={`schedule-view__team-dropdown-item ${isViewingSelf ? 'schedule-view__team-dropdown-item--selected' : ''}`}
+                      onClick={() => { setViewingUserId(user?.id); setMemberDropdownOpen(false) }}
+                    >
+                      나
+                    </button>
+                  </li>
+                  {teamMembers
+                    ?.filter((m) => m.id !== user?.id)
+                    .map((m) => (
+                      <li key={m.id} role="option">
+                        <button
+                          type="button"
+                          className={`schedule-view__team-dropdown-item ${scheduleOwnerId === m.id ? 'schedule-view__team-dropdown-item--selected' : ''}`}
+                          onClick={() => { setViewingUserId(m.id); setMemberDropdownOpen(false) }}
+                        >
+                          {m.nickname || m.display_name || '팀원'}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
         {canManageShare && (
           <button
@@ -222,10 +428,15 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
 
           <div className="schedule-view__grid">
           {grid.map((dateNum, i) => {
-            const schedule = getCellSchedule(dateNum)
+            const teamSchedules = !isMyScheduleMode ? getCellSchedules(dateNum) : []
+            const myItems = isMyScheduleMode ? getCellMyItems(dateNum) : { team: [], personal: [] }
+            const mySchedules = isMyScheduleMode ? getCellSchedulesForMyMode(dateNum) : []
+            const myAllItems = [...(myItems.team || []).map((t) => t.schedule || t), ...(myItems.personal || [])]
+            const imageUrl = isMyScheduleMode
+              ? (myAllItems.length > 0 ? getThumbnailForItems(myAllItems) : null)
+              : getThumbnailForItems(teamSchedules.map((s) => ({ place: s.place, exerciseType: s.exerciseType })))
             const selected = dateNum != null && isSelected(dateNum)
             const clickable = dateNum != null
-            const imageUrl = schedule?.place?.image_url ?? schedule?.exerciseType?.image_url
             const cellClass = [
               'schedule-view__cell',
               dateNum == null ? 'schedule-view__cell--empty' : '',
@@ -237,7 +448,25 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
               <>
                 {dateNum != null && (
                   <span className="schedule-view__cell-square" aria-hidden>
-                    {imageUrl ? (
+                    {isMyScheduleMode ? (
+                      <>
+                        {myAllItems.length > 0 && imageUrl && (
+                          <img src={imageUrl} alt="" className="schedule-view__cell-img" loading="lazy" />
+                        )}
+                        {mySchedules.length > 0 && (
+                          <span className="schedule-view__cell-corners schedule-view__cell-corners--overlay">
+                            {[...new Set(mySchedules.map((s) => s.teamId).filter(Boolean))].slice(0, 4).map((tid, idx) => (
+                              <span
+                                key={tid}
+                                className={`schedule-view__cell-corner schedule-view__cell-corner--${['tl', 'tr', 'bl', 'br'][idx]}`}
+                                style={{ '--team-color': teamColorByIndex[tid] ?? '#9e9e9e' }}
+                                title={sharableTeams?.find((t) => t.id === tid)?.name}
+                              />
+                            ))}
+                          </span>
+                        )}
+                      </>
+                    ) : imageUrl ? (
                       <img src={imageUrl} alt="" className="schedule-view__cell-img" loading="lazy" />
                     ) : null}
                   </span>
@@ -275,7 +504,48 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
       </div>
 
       <div className="schedule-view__date-info">
-        {selectedDate ? (
+        {isMyScheduleMode ? (
+          selectedDate ? (
+            selectedDayMyItems.team.length > 0 || selectedDayMyItems.personal.length > 0 ? (
+              <div
+                className="schedule-view__my-summary"
+                role="button"
+                tabIndex={0}
+                onClick={() => setShowDayModal(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowDayModal(true) }}
+              >
+                <div className="schedule-view__my-summary-count">
+                  {selectedDayMyItems.team.length + selectedDayMyItems.personal.length}개 일정
+                </div>
+                {isViewingSelf && <span className="schedule-view__my-summary-hint">클릭하여 편집</span>}
+              </div>
+            ) : (
+              isViewingSelf ? (
+                <div
+                  className="schedule-view__info-empty schedule-view__info-empty--clickable"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowDayModal(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowDayModal(true) }}
+                >
+                  일정이 없습니다. 클릭하여 추가
+                </div>
+              ) : (
+                <div
+                  className="schedule-view__info-empty schedule-view__info-empty--clickable"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowDayModal(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowDayModal(true) }}
+                >
+                  일정이 없습니다.
+                </div>
+              )
+            )
+          ) : (
+            <div className="schedule-view__info-placeholder">날짜를 선택하세요</div>
+          )
+        ) : selectedDate ? (
           selectedSchedule ? (
             <div className="schedule-view__info-card">
               <div className="schedule-view__info-icon" aria-hidden>
@@ -305,7 +575,7 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
         )}
       </div>
 
-      {canEditSelectedTeam && (
+      {!isMyScheduleMode && canEditSelectedTeam && (
         <button
           type="button"
           className="schedule-view__add-btn"
@@ -317,6 +587,18 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
         >
           <span className="schedule-view__add-btn-icon">+</span>
           일정추가하기
+        </button>
+      )}
+
+      {isMyScheduleMode && selectedDate && isViewingSelf && (
+        <button
+          type="button"
+          className="schedule-view__add-btn"
+          onClick={() => setShowAddPersonal(true)}
+          aria-label="개인 일정 추가"
+        >
+          <span className="schedule-view__add-btn-icon">+</span>
+          개인 일정 추가
         </button>
       )}
 
@@ -347,6 +629,108 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
             <ShareRequestView />
           </div>
         </div>
+      )}
+
+      {showDayModal && selectedDate && isMyScheduleMode && (
+        <div className="schedule-view__day-modal" role="dialog" aria-modal="true" aria-labelledby="day-modal-title">
+          <div className="schedule-view__share-backdrop" onClick={() => setShowDayModal(false)} aria-hidden />
+          <div className="schedule-view__day-panel">
+            <div className="schedule-view__share-header">
+              <h2 id="day-modal-title" className="schedule-view__share-title">
+                {selectedDate.year}.{selectedDate.month}.{selectedDate.day} 일정
+              </h2>
+              <button
+                type="button"
+                className="schedule-view__share-close"
+                onClick={() => setShowDayModal(false)}
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="schedule-view__day-list">
+              {isViewingSelf
+                ? selectedDayAllTeamSchedules.map(({ id, schedule, teamName, teamId }) => (
+                    <label key={id} className="schedule-view__day-item">
+                      <input
+                        type="checkbox"
+                        checked={dayModalCheckedIds.has(id)}
+                        onChange={(e) => handleDayModalCheckboxChange(id, e.target.checked)}
+                      />
+                      <span
+                        className="schedule-view__day-dot"
+                        style={{ backgroundColor: teamColorByIndex[teamId] ?? '#9e9e9e' }}
+                      />
+                      <span className="schedule-view__day-team">{teamName}</span>
+                      <span className="schedule-view__day-title">
+                        {schedule?.place?.name || schedule?.exerciseType?.name || '일정'}
+                      </span>
+                    </label>
+                  ))
+                : selectedDayMyItems.team.map(({ id, schedule, teamName, teamId }) => (
+                    <div key={id} className="schedule-view__day-item">
+                      <span
+                        className="schedule-view__day-dot"
+                        style={{ backgroundColor: teamColorByIndex[teamId] ?? '#9e9e9e' }}
+                      />
+                      <span className="schedule-view__day-team">{teamName}</span>
+                      <span className="schedule-view__day-title">
+                        {schedule?.place?.name || schedule?.exerciseType?.name || '일정'}
+                      </span>
+                    </div>
+                  ))}
+              {selectedDayMyItems.personal.map((p) => (
+                <div key={p.id} className="schedule-view__day-item schedule-view__day-item--personal">
+                  <span className="schedule-view__day-dot schedule-view__day-dot--personal" />
+                  <span className="schedule-view__day-title">
+                    {(p.place?.name ?? p.exerciseType?.name ?? p.title) || '개인 일정'}
+                  </span>
+                  {isViewingSelf && (
+                    <button
+                      type="button"
+                      className="schedule-view__day-delete"
+                      onClick={() => handleDeletePersonal(p.id)}
+                      aria-label="삭제"
+                    >
+                      삭제
+                    </button>
+                  )}
+                </div>
+              ))}
+              {((isViewingSelf && selectedDayAllTeamSchedules.length === 0 && selectedDayMyItems.personal.length === 0) ||
+                (!isViewingSelf && selectedDayMyItems.team.length === 0 && selectedDayMyItems.personal.length === 0)) && (
+                <div className="schedule-view__day-empty">일정이 없습니다.</div>
+              )}
+            </div>
+            {isViewingSelf && selectedDayAllTeamSchedules.length > 0 && (
+              <button
+                type="button"
+                className="schedule-view__apply-selected-btn"
+                onClick={handleApplySelectedSchedules}
+              >
+                선택한 일정 추가
+              </button>
+            )}
+            {isViewingSelf && (
+              <button
+                type="button"
+                className="schedule-view__add-personal-btn"
+                onClick={() => { setShowDayModal(false); setShowAddPersonal(true) }}
+              >
+                + 개인 일정 추가
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showAddPersonal && selectedDate && (
+        <AddPersonalScheduleView
+          selectedDate={selectedDate}
+          userId={user?.id}
+          onClose={() => setShowAddPersonal(false)}
+          onSuccess={() => { refetchPersonal(); refetchMulti() }}
+        />
       )}
     </div>
   )

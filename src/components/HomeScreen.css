@@ -230,6 +230,14 @@
   font-size: 0.9375rem;
 }
 
+.home-screen__schedule-block {
+  margin-bottom: 1.5rem;
+}
+
+.home-screen__schedule-block:last-child {
+  margin-bottom: 0;
+}
+
 .home-screen__cards {
   display: flex;
   flex-direction: column;

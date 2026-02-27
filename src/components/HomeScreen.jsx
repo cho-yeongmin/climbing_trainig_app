@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useShareBadge, markShareModalSeen } from '../hooks/useShareRequests'
 import { useTeamJoinBadge, markTeamJoinModalSeen } from '../hooks/useProfile'
-import { useNextExpedition, useExerciseTypes, useTodaySchedule, useTodayTrainingRecord, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
+import { useNextExpeditionFromMySchedule, useExerciseTypes, useTodayScheduleFromMySchedule, useTodayTrainingRecord, useTodayTrainingRecords, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
 import { getDayContentByType } from '../data/dayContent'
 import { lazy, Suspense } from 'react'
 import DayContentCard from './DayContentCard'
@@ -53,12 +53,24 @@ export default function HomeScreen() {
     }
   }
 
-  const { data: nextExpedition, loading: nextExpeditionLoading } = useNextExpedition(teamId)
+  const { data: nextExpedition, loading: nextExpeditionLoading, refetch: refetchNextExpedition } = useNextExpeditionFromMySchedule(user?.id)
   const { data: exerciseTypes } = useExerciseTypes()
-  const { data: todaySchedule } = useTodaySchedule(teamId)
+  const { data: todayScheduleData, refetch: refetchTodaySchedule } = useTodayScheduleFromMySchedule(user?.id)
 
-  // 오늘 일정이 있으면 그 운동 유형, 없으면 휴식하는 날
-  const dayTypeId = todaySchedule?.exercise_types?.day_type_id ?? 'rest'
+  useEffect(() => {
+    if (activeTab === 'home' && user?.id) {
+      refetchNextExpedition()
+      refetchTodaySchedule()
+    }
+  }, [activeTab, user?.id, refetchNextExpedition, refetchTodaySchedule])
+
+  const todaySchedules = useMemo(
+    () => (Array.isArray(todayScheduleData) ? todayScheduleData : todayScheduleData ? [todayScheduleData] : []),
+    [todayScheduleData]
+  )
+
+  const firstSchedule = todaySchedules[0] ?? null
+  const dayTypeId = firstSchedule?.exercise_types?.day_type_id ?? 'rest'
   const dayContent = useMemo(
     () => getDayContentByType(dayTypeId),
     [dayTypeId]
@@ -75,23 +87,25 @@ export default function HomeScreen() {
       userId: user.id,
       recordDate: new Date(),
       exerciseTypeId: exerciseType.id,
-      scheduleId: todaySchedule?.id ?? null,
+      scheduleId: firstSchedule?.id ?? null,
       teamId: teamId ?? null,
     }
-  }, [user?.id, exerciseType?.id, todaySchedule?.id, teamId])
+  }, [user?.id, exerciseType?.id, firstSchedule?.id, teamId])
 
   const { data: todayRecord, refetch: refetchTodayRecord } = useTodayTrainingRecord(
     user?.id,
     saveContext?.recordDate,
-    exerciseType?.id
+    exerciseType?.id,
+    firstSchedule?.id
   )
+  const { data: todayRecordsMap, refetch: refetchTodayRecords } = useTodayTrainingRecords(user?.id, new Date())
 
   const { data: latestRecord } = useLatestTrainingRecord(
     user?.id,
     exerciseType?.id
   )
 
-  const placeId = todaySchedule?.place_id ?? null
+  const placeId = firstSchedule?.place_id ?? null
   const { data: placeColors } = usePlaceDifficultyColors(placeId)
   const { data: expeditionLatestRecord } = useLatestExpeditionRecordByPlace(
     user?.id,
@@ -99,7 +113,34 @@ export default function HomeScreen() {
     dayTypeId === 'expedition' ? exerciseType?.id : null
   )
 
+  const scheduleBlocks = useMemo(() => {
+    return todaySchedules.map((sched) => {
+      const schedDayTypeId = sched?.exercise_types?.day_type_id ?? 'rest'
+      const schedExerciseType = exerciseTypes?.find((t) => t.day_type_id === schedDayTypeId)
+      const isPersonal = sched?.isPersonal === true
+      const schedSaveContext =
+        user?.id && schedExerciseType?.id
+          ? {
+              userId: user.id,
+              recordDate: new Date(),
+              exerciseTypeId: schedExerciseType.id,
+              scheduleId: isPersonal ? null : (sched?.id ?? null),
+              personalScheduleId: isPersonal ? (sched?.personalId ?? sched?.id) : null,
+              teamId: sched?.team_id ?? teamId ?? null,
+            }
+          : null
+      return {
+        schedule: sched,
+        dayTypeId: schedDayTypeId,
+        dayContent: getDayContentByType(schedDayTypeId),
+        exerciseType: schedExerciseType,
+        saveContext: schedSaveContext,
+      }
+    })
+  }, [todaySchedules, exerciseTypes, user?.id, teamId])
+
   const [isEditingRecord, setIsEditingRecord] = useState(false)
+  const [editingRecordScheduleId, setEditingRecordScheduleId] = useState(null)
   const [showTimerModal, setShowTimerModal] = useState(false)
   const [showProfileEdit, setShowProfileEdit] = useState(false)
 
@@ -118,39 +159,41 @@ export default function HomeScreen() {
   const hasTeamJoinBadge = (isAdmin || isSupervisor) && teamJoinBadgeActive
 
   const handleSaveRecord = useCallback(
-    async (payload, detailType) => {
-      if (!saveContext) return
+    async (payload, detailType, ctx = saveContext) => {
+      if (!ctx) return
       try {
-        await saveTrainingRecord({
-          ...saveContext,
-          detailType,
-          payload,
-        })
+        await saveTrainingRecord({ ...ctx, detailType, payload })
         await refetchTodayRecord()
+        await refetchTodayRecords()
         setIsEditingRecord(false)
+        setEditingRecordScheduleId(null)
         alert('저장되었습니다.')
       } catch (err) {
         console.error(err)
         alert('저장에 실패했습니다.')
       }
     },
-    [saveContext, refetchTodayRecord]
+    [saveContext, refetchTodayRecord, refetchTodayRecords]
   )
 
   const handleDeleteRecord = useCallback(
-    async () => {
-      if (!saveContext || !confirm('오늘 저장한 운동 기록을 삭제할까요?')) return
+    async (ctx = saveContext) => {
+      if (!ctx || !confirm('오늘 저장한 운동 기록을 삭제할까요?')) return
       try {
-        await deleteTodayTrainingRecord(saveContext)
+        const mapKey = ctx.scheduleId ?? (ctx.personalScheduleId ? `p_${ctx.personalScheduleId}` : `ex_${ctx.exerciseTypeId}`)
+        const record = todayRecordsMap?.[mapKey]
+        await deleteTodayTrainingRecord({ ...ctx, recordId: record?.id })
         await refetchTodayRecord()
+        await refetchTodayRecords()
         setIsEditingRecord(false)
+        setEditingRecordScheduleId(null)
         alert('삭제되었습니다.')
       } catch (err) {
         console.error(err)
         alert('삭제에 실패했습니다.')
       }
     },
-    [saveContext, refetchTodayRecord]
+    [saveContext, todayRecordsMap, refetchTodayRecord, refetchTodayRecords]
   )
 
   return (
@@ -231,25 +274,56 @@ export default function HomeScreen() {
 
         {activeTab === 'home' && (
           <div className="home-screen__cards">
-            {dayContent.cards.map((card, index) => (
-              <DayContentCard
-                key={index}
-                card={card}
-                dayTypeId={dayTypeId}
-                nextExpedition={card.type === 'dday' ? nextExpedition : undefined}
-                nextExpeditionLoading={card.type === 'dday' ? nextExpeditionLoading : false}
-                onSave={handleSaveRecord}
-                onDeleteRecord={handleDeleteRecord}
-                onOpenTimer={() => setShowTimerModal(true)}
-                saveContext={saveContext}
-                todayRecord={todayRecord}
-                latestRecord={latestRecord}
-                placeColors={placeColors ?? []}
-                expeditionLatestRecord={expeditionLatestRecord}
-                isEditingRecord={isEditingRecord}
-                onEditRecord={() => setIsEditingRecord(true)}
-              />
-            ))}
+            {scheduleBlocks.length > 0 ? (
+              scheduleBlocks.map((block, blockIdx) => {
+                const blockKey = block.schedule?.isPersonal ? `p_${block.schedule.personalId ?? block.schedule.id}` : block.schedule?.id ?? `ex_${block.exerciseType?.id}`
+                const blockRecord = todayRecordsMap?.[blockKey]
+                const blockEditKey = block.schedule?.id ?? blockIdx
+                return (
+                  <div key={blockKey} className="home-screen__schedule-block">
+                    {(block.dayContent.cards.filter((card) => blockIdx === 0 || card.type !== 'dday')).map((card, index) => (
+                      <DayContentCard
+                        key={index}
+                        card={card}
+                        dayTypeId={block.dayTypeId}
+                        nextExpedition={card.type === 'dday' ? nextExpedition : undefined}
+                        nextExpeditionLoading={card.type === 'dday' ? nextExpeditionLoading : false}
+                        onSave={(p, t) => handleSaveRecord(p, t, block.saveContext)}
+                        onDeleteRecord={() => handleDeleteRecord(block.saveContext)}
+                        onOpenTimer={() => setShowTimerModal(true)}
+                        saveContext={block.saveContext}
+                        todayRecord={blockRecord ? { detailType: blockRecord.detailType, payload: blockRecord.payload } : null}
+                        latestRecord={latestRecord}
+                        placeColors={placeColors ?? []}
+                        expeditionLatestRecord={block.dayTypeId === 'expedition' ? expeditionLatestRecord : undefined}
+                        isEditingRecord={editingRecordScheduleId === blockEditKey}
+                        onEditRecord={() => setEditingRecordScheduleId(blockEditKey)}
+                      />
+                    ))}
+                  </div>
+                )
+              })
+            ) : (
+              dayContent.cards.map((card, index) => (
+                <DayContentCard
+                  key={index}
+                  card={card}
+                  dayTypeId={dayTypeId}
+                  nextExpedition={card.type === 'dday' ? nextExpedition : undefined}
+                  nextExpeditionLoading={card.type === 'dday' ? nextExpeditionLoading : false}
+                  onSave={handleSaveRecord}
+                  onDeleteRecord={() => handleDeleteRecord()}
+                  onOpenTimer={() => setShowTimerModal(true)}
+                  saveContext={saveContext}
+                  todayRecord={todayRecord}
+                  latestRecord={latestRecord}
+                  placeColors={placeColors ?? []}
+                  expeditionLatestRecord={expeditionLatestRecord}
+                  isEditingRecord={isEditingRecord}
+                  onEditRecord={() => setIsEditingRecord(true)}
+                />
+              ))
+            )}
           </div>
         )}
 
