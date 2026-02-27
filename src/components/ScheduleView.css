@@ -24,55 +24,52 @@
   grid-area: dateinfo;
 }
 
-/* 가로 모드에서만: 달력 + 날짜 정보 나란히 (세로 모드는 위아래 배치) */
-@media (orientation: landscape) {
-  .schedule-view {
-    grid-template-areas:
-      'top top'
-      'calendar dateinfo';
-    grid-template-columns: 1fr 200px;
-    grid-template-rows: auto auto;
-    gap: 0 1rem;
-  }
-  .schedule-view__date-info {
-    margin-top: 0;
-    align-self: start;
-    min-height: auto;
-  }
+/* 가로 모드 + 높이 900px 이하: 달력 + 날짜 정보 나란히 (JS .is-landscape-2col) */
+html.is-landscape-2col .schedule-view {
+  grid-template-areas:
+    'top top'
+    'calendar dateinfo';
+  grid-template-columns: 1fr 200px;
+  grid-template-rows: auto auto;
+  gap: 0 1rem;
+}
+html.is-landscape-2col .schedule-view__date-info {
+  margin-top: 0;
+  align-self: start;
+  min-height: auto;
 }
 
-@media (orientation: landscape) and (min-width: 768px) {
-  .schedule-view {
+@media (min-width: 768px) {
+  html.is-landscape-2col .schedule-view {
     grid-template-columns: 1fr 220px;
     gap: 0 1.5rem;
   }
 }
 
-@media (orientation: landscape) and (min-width: 1024px) {
-  .schedule-view {
+@media (min-width: 1024px) {
+  html.is-landscape-2col .schedule-view {
     grid-template-columns: 1fr 240px;
     gap: 0 2rem;
   }
 }
 
-@media (orientation: landscape) and (max-height: 500px) {
-  .schedule-view {
-    margin-top: 0;
-    padding-bottom: 0.5rem;
-  }
-  .schedule-view__top-row {
-    margin-bottom: 0.5rem;
-  }
-  .schedule-view__calendar-wrap {
-    padding: 10px;
-  }
-  .schedule-view__body {
-    margin-top: 10px;
-    padding-top: 10px;
-  }
-  .schedule-view__date-info {
-    margin-top: 10px;
-  }
+/* 가로 모드 + 짧은 화면 (JS .is-landscape-short) */
+html.is-landscape-short .schedule-view {
+  margin-top: 0;
+  padding-bottom: 0.5rem;
+}
+html.is-landscape-short .schedule-view__top-row {
+  margin-bottom: 0.5rem;
+}
+html.is-landscape-short .schedule-view__calendar-wrap {
+  padding: 10px;
+}
+html.is-landscape-short .schedule-view__body {
+  margin-top: 10px;
+  padding-top: 10px;
+}
+html.is-landscape-short .schedule-view__date-info {
+  margin-top: 10px;
 }
 
 .schedule-view__top-row {

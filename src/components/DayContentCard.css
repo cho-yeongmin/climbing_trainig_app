@@ -19,13 +19,12 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 500px) {
-  .day-card {
-    padding: 0.875rem 1rem;
-  }
-  .day-card__title {
-    font-size: 1.0625rem !important;
-  }
+/* 가로 모드 + 짧은 화면 (JS .is-landscape-short) */
+html.is-landscape-short .day-card {
+  padding: 0.875rem 1rem;
+}
+html.is-landscape-short .day-card__title {
+  font-size: 1.0625rem !important;
 }
 
 @media (min-width: 768px) {

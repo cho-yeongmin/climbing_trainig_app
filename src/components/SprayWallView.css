@@ -4,13 +4,11 @@
   min-width: 0;
 }
 
-/* 가로 모드에서만 2열 (세로 모드는 1열) */
-@media (orientation: landscape) {
-  .spray-wall-view__cards {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
+/* 가로 모드 + 높이 900px 이하에서만 2열 (JS .is-landscape-2col) */
+html.is-landscape-2col .spray-wall-view__cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
 }
 
 .spray-wall-view__header {

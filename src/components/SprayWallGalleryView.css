@@ -28,23 +28,21 @@
   gap: 0.75rem;
 }
 
-/* 가로 모드: 2열 이상 */
-@media (orientation: landscape) {
-  .spray-wall-gallery__grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
+/* 가로 모드 + 높이 900px 이하에서만 2열 이상 (JS .is-landscape-2col) */
+html.is-landscape-2col .spray-wall-gallery__grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
 }
 
-@media (orientation: landscape) and (min-width: 768px) {
-  .spray-wall-gallery__grid {
+@media (min-width: 768px) {
+  html.is-landscape-2col .spray-wall-gallery__grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 1.25rem;
   }
 }
 
-@media (orientation: landscape) and (min-width: 1024px) {
-  .spray-wall-gallery__grid {
+@media (min-width: 1024px) {
+  html.is-landscape-2col .spray-wall-gallery__grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
   }

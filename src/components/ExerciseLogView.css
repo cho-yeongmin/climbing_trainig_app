@@ -10,13 +10,11 @@
   gap: 1rem;
 }
 
-/* 가로 모드에서만 2열 */
-@media (orientation: landscape) {
-  .exercise-log-view__list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
-  }
+/* 가로 모드 + 높이 900px 이하에서만 2열 (JS .is-landscape-2col) */
+html.is-landscape-2col .exercise-log-view__list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
 }
 
 .log-card {

@@ -35,57 +35,52 @@
   }
 }
 
-/* 가로 모드: 넓은 화면 활용 */
-@media (orientation: landscape) {
-  .home-screen__main {
-    max-width: 90%;
-    padding-bottom: 1rem;
-  }
+/* 가로 모드: 넓은 화면 활용 (JS .is-landscape) */
+html.is-landscape .home-screen__main {
+  max-width: 90%;
+  padding-bottom: 1rem;
 }
 
-@media (orientation: landscape) and (min-width: 640px) {
-  .home-screen__main {
+@media (min-width: 640px) {
+  html.is-landscape .home-screen__main {
     max-width: 900px;
   }
 }
 
-@media (orientation: landscape) and (max-height: 500px) {
-  .home-screen__main {
-    padding-top: 0.5rem;
-    padding-bottom: 0.75rem;
-  }
-  .home-screen__header {
-    margin-bottom: 0.75rem;
-  }
-  .home-screen__title-top,
-  .home-screen__title {
-    font-size: 1.25rem !important;
-  }
-  .home-screen__tabs {
-    margin-bottom: 0.75rem;
-  }
-  .home-screen__cards {
-    gap: 0.75rem;
-  }
-  .home-screen__schedule-block {
-    margin-bottom: 0.75rem;
-  }
+/* 가로 모드 + 짧은 화면 (JS .is-landscape-short) */
+html.is-landscape-short .home-screen__main {
+  padding-top: 0.5rem;
+  padding-bottom: 0.75rem;
+}
+html.is-landscape-short .home-screen__header {
+  margin-bottom: 0.75rem;
+}
+html.is-landscape-short .home-screen__title-top,
+html.is-landscape-short .home-screen__title {
+  font-size: 1.25rem !important;
+}
+html.is-landscape-short .home-screen__tabs {
+  margin-bottom: 0.75rem;
+}
+html.is-landscape-short .home-screen__cards {
+  gap: 0.75rem;
+}
+html.is-landscape-short .home-screen__schedule-block {
+  margin-bottom: 0.75rem;
 }
 
-/* 가로 모드에서만 2열, 세로 모드에서는 무조건 1열 */
-@media (orientation: landscape) {
-  .home-screen__cards {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    align-items: start;
-  }
-  .home-screen__schedule-block {
-    margin-bottom: 0;
-  }
-  .home-screen__schedule-block:only-child {
-    grid-column: 1 / -1;
-  }
+/* 가로 모드 + 높이 900px 이하에서만 2열 (JS .is-landscape-2col) */
+html.is-landscape-2col .home-screen__cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+html.is-landscape-2col .home-screen__schedule-block {
+  margin-bottom: 0;
+}
+html.is-landscape-2col .home-screen__schedule-block:only-child {
+  grid-column: 1 / -1;
 }
 
 .home-screen__header {
