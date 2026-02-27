@@ -17,9 +17,9 @@ import './HomeScreen.css'
 
 const TABS = [
   { id: 'home', label: '홈' },
-  { id: 'schedule', label: '일정확인' },
+  { id: 'schedule', label: '일정' },
   { id: 'team', label: '팀' },
-  { id: 'log', label: '운동로그' },
+  { id: 'log', label: '기록' },
   { id: 'spraywall', label: '스프레이월' },
 ]
 
@@ -218,7 +218,7 @@ export default function HomeScreen() {
               type="button"
               role="tab"
               aria-selected={activeTab === tab.id}
-              className={`home-screen__tab ${activeTab === tab.id ? 'home-screen__tab--active' : ''} ${tab.id === 'home' || tab.id === 'team' ? 'home-screen__tab--compact' : ''}`}
+              className={`home-screen__tab ${activeTab === tab.id ? 'home-screen__tab--active' : ''} ${['home', 'schedule', 'team', 'log'].includes(tab.id) ? 'home-screen__tab--compact' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
