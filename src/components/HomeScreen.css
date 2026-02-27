@@ -72,7 +72,8 @@
   }
 }
 
-@media (orientation: landscape) and (min-width: 640px) {
+/* 가로 모드에서만 2열, 세로 모드에서는 무조건 1열 */
+@media (orientation: landscape) {
   .home-screen__cards {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -84,28 +85,6 @@
   }
   .home-screen__schedule-block:only-child {
     grid-column: 1 / -1;
-  }
-}
-
-@media (min-width: 768px) {
-  .home-screen__cards {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
-    align-items: start;
-  }
-  .home-screen__schedule-block {
-    margin-bottom: 0;
-  }
-  .home-screen__schedule-block:only-child {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (min-width: 1024px) {
-  .home-screen__cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
   }
 }
 

@@ -24,8 +24,8 @@
   grid-area: dateinfo;
 }
 
-/* 가로 모드: 달력 + 날짜 정보 나란히 */
-@media (orientation: landscape) and (min-width: 640px) {
+/* 가로 모드에서만: 달력 + 날짜 정보 나란히 (세로 모드는 위아래 배치) */
+@media (orientation: landscape) {
   .schedule-view {
     grid-template-areas:
       'top top'
@@ -41,23 +41,14 @@
   }
 }
 
-/* Tablet: 달력 + 날짜 정보 나란히 */
-@media (min-width: 768px) {
+@media (orientation: landscape) and (min-width: 768px) {
   .schedule-view {
-    grid-template-areas:
-      'top top'
-      'calendar dateinfo';
     grid-template-columns: 1fr 220px;
-    grid-template-rows: auto auto;
     gap: 0 1.5rem;
-  }
-  .schedule-view__date-info {
-    margin-top: 0;
-    align-self: start;
   }
 }
 
-@media (min-width: 1024px) {
+@media (orientation: landscape) and (min-width: 1024px) {
   .schedule-view {
     grid-template-columns: 1fr 240px;
     gap: 0 2rem;

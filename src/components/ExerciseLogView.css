@@ -10,18 +10,12 @@
   gap: 1rem;
 }
 
-@media (min-width: 768px) {
+/* 가로 모드에서만 2열 */
+@media (orientation: landscape) {
   .exercise-log-view__list {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .exercise-log-view__list {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
   }
 }
 

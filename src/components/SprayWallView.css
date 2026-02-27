@@ -4,18 +4,12 @@
   min-width: 0;
 }
 
-@media (min-width: 768px) {
+/* 가로 모드에서만 2열 (세로 모드는 1열) */
+@media (orientation: landscape) {
   .spray-wall-view__cards {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .spray-wall-view__cards {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
   }
 }
 

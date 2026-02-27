@@ -21,27 +21,29 @@
   text-align: center;
 }
 
+/* 세로 모드: 1열 */
 .spray-wall-gallery__grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 0.75rem;
 }
 
-@media (min-width: 480px) {
+/* 가로 모드: 2열 이상 */
+@media (orientation: landscape) {
   .spray-wall-gallery__grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
 }
 
-@media (min-width: 768px) {
+@media (orientation: landscape) and (min-width: 768px) {
   .spray-wall-gallery__grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 1.25rem;
   }
 }
 
-@media (min-width: 1024px) {
+@media (orientation: landscape) and (min-width: 1024px) {
   .spray-wall-gallery__grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
