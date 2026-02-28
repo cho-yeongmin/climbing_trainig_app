@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { CARD_TYPES } from '../data/dayTypes'
+import { usePlaceDifficultyByDiscipline } from '../hooks/useSupabase'
 import './DayContentCard.css'
 
 /**
@@ -633,13 +634,25 @@ function PreviousRecordsStrengthBlock({ card, latestRecord }) {
   )
 }
 
+const DISCIPLINE_LABELS = { bouldering: '볼더링', lead: '리드' }
+
+/** payload 정규화: 구형 { V1: 3 } → { bouldering: { V1: 3 } } */
+function normalizePayload(raw) {
+  if (!raw || typeof raw !== 'object') return { bouldering: {}, lead: {} }
+  if (raw.bouldering != null || raw.lead != null) {
+    return { bouldering: raw.bouldering ?? {}, lead: raw.lead ?? {} }
+  }
+  return { bouldering: { ...raw }, lead: {} }
+}
+
+
 /**
- * 원정 당일: 색상(난이도)별 완등 수 기록
- * - 완등한 문제 수만 (시도한 문제 수 없음)
- * - 이전 방문 기록: 상위 2개 난이도만 표시, 없으면 "이전 방문 기록이 없습니다."
+ * 원정 당일: 색상(난이도)별 완등 수 기록 (볼더링/리드)
+ * - 장소별로 볼더링 또는 리드 중 있는 종목만 표시
  */
 function ExpeditionClimbsBlock({
-  placeColors,
+  placeId,
+  placeColors = [],
   onSave,
   onEdit,
   onDelete,
@@ -648,52 +661,86 @@ function ExpeditionClimbsBlock({
   expeditionLatestRecord,
   isEditingRecord,
 }) {
-  const isSaved = !isEditingRecord && todayRecord?.detailType === 'expedition_climbs'
-  const savedPayload = todayRecord?.detailType === 'expedition_climbs' ? todayRecord?.payload ?? {} : {}
-
-  const getInitialCounts = () => {
-    if (savedPayload && typeof savedPayload === 'object' && Object.keys(savedPayload).length > 0) {
-      return { ...savedPayload }
+  const { data: byDiscipline, loading } = usePlaceDifficultyByDiscipline(placeId ?? undefined)
+  const colorsByDiscipline = useMemo(() => {
+    if (placeId && byDiscipline && (byDiscipline.bouldering?.length > 0 || byDiscipline.lead?.length > 0)) {
+      return byDiscipline
     }
-    const init = {}
-    placeColors.forEach((c) => { init[c.grade_label] = 0 })
+    return { bouldering: placeColors, lead: [] }
+  }, [placeId, byDiscipline, placeColors])
+
+  const isSaved = !isEditingRecord && todayRecord?.detailType === 'expedition_climbs'
+  const savedNormalized = useMemo(
+    () => normalizePayload(todayRecord?.detailType === 'expedition_climbs' ? todayRecord?.payload : {}),
+    [todayRecord]
+  )
+
+  const getInitialCounts = useCallback(() => {
+    if (isSaved && ((savedNormalized.bouldering && Object.keys(savedNormalized.bouldering).length > 0) || (savedNormalized.lead && Object.keys(savedNormalized.lead).length > 0))) {
+      return { bouldering: { ...savedNormalized.bouldering }, lead: { ...savedNormalized.lead } }
+    }
+    const init = { bouldering: {}, lead: {} }
+    ;['bouldering', 'lead'].forEach((d) => {
+      (colorsByDiscipline[d] || []).forEach((c) => { init[d][c.grade_label] = 0 })
+    })
     return init
-  }
+  }, [isSaved, savedNormalized, colorsByDiscipline])
   const [counts, setCounts] = useState(getInitialCounts)
 
   useEffect(() => {
-    if (!isSaved && placeColors.length > 0) {
+    if (!isSaved) {
       setCounts((prev) => {
-        const next = {}
-        placeColors.forEach((c) => { next[c.grade_label] = prev[c.grade_label] ?? 0 })
+        const next = { bouldering: {}, lead: {} }
+        ;['bouldering', 'lead'].forEach((d) => {
+          (colorsByDiscipline[d] || []).forEach((c) => {
+            next[d][c.grade_label] = prev[d]?.[c.grade_label] ?? 0
+          })
+        })
         return next
       })
     }
-  }, [placeColors, isSaved])
+  }, [colorsByDiscipline, isSaved])
 
-  const inc = (gradeLabel) => {
-    setCounts((prev) => ({ ...prev, [gradeLabel]: (prev[gradeLabel] ?? 0) + 1 }))
+  const inc = (discipline, gradeLabel) => {
+    setCounts((prev) => ({
+      ...prev,
+      [discipline]: { ...(prev[discipline] ?? {}), [gradeLabel]: (prev[discipline]?.[gradeLabel] ?? 0) + 1 },
+    }))
   }
-  const dec = (gradeLabel) => {
+  const dec = (discipline, gradeLabel) => {
     setCounts((prev) => {
-      const v = (prev[gradeLabel] ?? 0) - 1
-      return { ...prev, [gradeLabel]: Math.max(0, v) }
+      const v = (prev[discipline]?.[gradeLabel] ?? 0) - 1
+      return { ...prev, [discipline]: { ...(prev[discipline] ?? {}), [gradeLabel]: Math.max(0, v) } }
     })
   }
 
-  const getTop2FromLatest = () => {
-    if (!expeditionLatestRecord?.payload || !placeColors?.length) return []
-    const payload = expeditionLatestRecord.payload
-    const gradeToOrder = Object.fromEntries(placeColors.map((c) => [c.grade_label, c.sort_order]))
-    const entries = Object.entries(payload)
-      .filter(([, v]) => Number(v) > 0)
-      .map(([grade, count]) => ({ grade, count: Number(count), sortOrder: gradeToOrder[grade] ?? 0 }))
-      .sort((a, b) => (b.sortOrder - a.sortOrder))
-    return entries.slice(0, 2)
-  }
-  const top2 = getTop2FromLatest()
+  const getTop2PerDiscipline = useCallback(() => {
+    const raw = expeditionLatestRecord?.payload
+    if (!raw) return { bouldering: [], lead: [] }
+    const norm = normalizePayload(raw)
+    const result = { bouldering: [], lead: [] }
+    ;['bouldering', 'lead'].forEach((d) => {
+      const colors = colorsByDiscipline[d] || []
+      const gradeToOrder = Object.fromEntries(colors.map((c) => [c.grade_label, c.sort_order]))
+      const entries = Object.entries(norm[d] || {})
+        .filter(([, v]) => Number(v) > 0)
+        .map(([grade, count]) => ({ grade, count: Number(count), sortOrder: gradeToOrder[grade] ?? 0 }))
+        .sort((a, b) => (b.sortOrder - a.sortOrder))
+      result[d] = entries.slice(0, 2)
+    })
+    return result
+  }, [expeditionLatestRecord, colorsByDiscipline])
+  const top2 = getTop2PerDiscipline()
 
-  if (placeColors.length === 0) {
+  const hasAnyColors = (colorsByDiscipline.bouldering?.length ?? 0) > 0 || (colorsByDiscipline.lead?.length ?? 0) > 0
+  if (loading && !hasAnyColors) {
+    return (
+      <article className="day-card day-card--expedition-climbs">
+        <p className="day-card__no-records">로딩 중...</p>
+      </article>
+    )
+  }
+  if (!hasAnyColors) {
     return (
       <article className="day-card day-card--expedition-climbs">
         <p className="day-card__no-records">이 장소의 난이도 색상이 설정되지 않았습니다. 관리자에게 문의하세요.</p>
@@ -701,104 +748,65 @@ function ExpeditionClimbsBlock({
     )
   }
 
-  if (isSaved) {
-    return (
-      <article className="day-card day-card--expedition-climbs">
-        <div className="day-card__set-rows">
-          {placeColors.map((c) => (
-            <div key={c.id} className="day-card__set-row">
-              <span
-                className="day-card__expedition-color"
-                style={{ backgroundColor: c.color_hex }}
-                aria-label={c.grade_label}
-              />
-              <span className="day-card__set-label">{c.grade_label}</span>
-              <span className={`day-card__expedition-count ${(savedPayload[c.grade_label] ?? 0) > 0 ? 'day-card__expedition-count--has-value' : ''}`}>
-                {savedPayload[c.grade_label] ?? 0}개
-              </span>
-            </div>
-          ))}
-        </div>
-        {top2.length > 0 ? (
-          <div className="day-card__expedition-previous">
-            <h3 className="day-card__list-title">이전 방문 기록</h3>
-            {top2.map(({ grade, count }) => (
-              <p key={grade} className="day-card__expedition-previous-item">
-                {grade} {count}개
-              </p>
-            ))}
-          </div>
+  const renderRows = (discipline, items) =>
+    items.map((c) => (
+      <div key={`${discipline}-${c.id}`} className="day-card__set-row">
+        <span className="day-card__expedition-color" style={{ backgroundColor: c.color_hex }} aria-label={c.grade_label} />
+        <span className="day-card__set-label">{c.grade_label}</span>
+        {isSaved ? (
+          <span className={`day-card__expedition-count ${(savedNormalized[discipline]?.[c.grade_label] ?? 0) > 0 ? 'day-card__expedition-count--has-value' : ''}`}>
+            {savedNormalized[discipline]?.[c.grade_label] ?? 0}개
+          </span>
         ) : (
-          <p className="day-card__no-records">이전 방문 기록이 없습니다.</p>
+          <div className="day-card__expedition-count-controls">
+            <button type="button" className="day-card__expedition-count-btn" onClick={() => dec(discipline, c.grade_label)} aria-label={`${c.grade_label} 완등 수 감소`}>−</button>
+            <span className={`day-card__expedition-count-num ${(counts[discipline]?.[c.grade_label] ?? 0) > 0 ? 'day-card__expedition-count-num--has-value' : ''}`}>
+              {counts[discipline]?.[c.grade_label] ?? 0}
+            </span>
+            <button type="button" className="day-card__expedition-count-btn" onClick={() => inc(discipline, c.grade_label)} aria-label={`${c.grade_label} 완등 수 증가`}>+</button>
+          </div>
         )}
-        <div className="day-card__save-wrap day-card__save-wrap--actions">
-          <button type="button" className="day-card__edit-btn" onClick={onEdit}>
-            수정
-          </button>
-          <button type="button" className="day-card__delete-btn" onClick={onDelete}>
-            삭제
-          </button>
-        </div>
-      </article>
-    )
-  }
+      </div>
+    ))
+
+  const disciplines = ['bouldering', 'lead'].filter((d) => (colorsByDiscipline[d]?.length ?? 0) > 0)
+  const isTwoCol = disciplines.length === 2
 
   return (
     <article className="day-card day-card--expedition-climbs">
-      <div className="day-card__set-rows">
-        {placeColors.map((c) => (
-          <div key={c.id} className="day-card__set-row">
-            <span
-              className="day-card__expedition-color"
-              style={{ backgroundColor: c.color_hex }}
-              aria-hidden
-            />
-            <span className="day-card__set-label">{c.grade_label}</span>
-            <div className="day-card__expedition-count-controls">
-              <button
-                type="button"
-                className="day-card__expedition-count-btn"
-                onClick={() => dec(c.grade_label)}
-                aria-label={`${c.grade_label} 완등 수 감소`}
-              >
-                −
-              </button>
-              <span className={`day-card__expedition-count-num ${(counts[c.grade_label] ?? 0) > 0 ? 'day-card__expedition-count-num--has-value' : ''}`}>
-                {counts[c.grade_label] ?? 0}
-              </span>
-              <button
-                type="button"
-                className="day-card__expedition-count-btn"
-                onClick={() => inc(c.grade_label)}
-                aria-label={`${c.grade_label} 완등 수 증가`}
-              >
-                +
-              </button>
-            </div>
+      <div className={`day-card__expedition-sections ${isTwoCol ? 'day-card__expedition-sections--2col' : ''}`}>
+        {disciplines.map((d) => (
+          <div key={d} className="day-card__expedition-section">
+            <h3 className="day-card__expedition-discipline">{DISCIPLINE_LABELS[d] ?? d}</h3>
+            <div className="day-card__set-rows">{renderRows(d, colorsByDiscipline[d] || [])}</div>
           </div>
         ))}
       </div>
-      {top2.length > 0 ? (
+      {((top2.bouldering?.length ?? 0) > 0 || (top2.lead?.length ?? 0) > 0) ? (
         <div className="day-card__expedition-previous">
           <h3 className="day-card__list-title">이전 방문 기록</h3>
-          {top2.map(({ grade, count }) => (
-            <p key={grade} className="day-card__expedition-previous-item">
-              {grade} {count}개
-            </p>
+          {top2.bouldering?.map(({ grade, count }) => (
+            <p key={`b-${grade}`} className="day-card__expedition-previous-item">볼더링 {grade} {count}개</p>
+          ))}
+          {top2.lead?.map(({ grade, count }) => (
+            <p key={`l-${grade}`} className="day-card__expedition-previous-item">리드 {grade} {count}개</p>
           ))}
         </div>
       ) : (
         <p className="day-card__no-records">이전 방문 기록이 없습니다.</p>
       )}
-      <div className="day-card__save-wrap">
-        <button
-          type="button"
-          className="day-card__save-btn"
-          onClick={() => onSave?.(counts, 'expedition_climbs')}
-        >
-          저장하기
-        </button>
-      </div>
+      {!isSaved ? (
+        <div className="day-card__save-wrap">
+          <button type="button" className="day-card__save-btn" onClick={() => onSave?.(counts, 'expedition_climbs')}>
+            저장하기
+          </button>
+        </div>
+      ) : (
+        <div className="day-card__save-wrap day-card__save-wrap--actions">
+          <button type="button" className="day-card__edit-btn" onClick={onEdit}>수정</button>
+          <button type="button" className="day-card__delete-btn" onClick={onDelete}>삭제</button>
+        </div>
+      )}
     </article>
   )
 }
@@ -863,7 +871,8 @@ function DdayCard({ nextExpeditionLoading, nextExpedition }) {
  * nextExpeditionLoading: DDAY 카드 로딩 여부
  * onSave: 저장 시 호출 (payload, detailType) => void
  * saveContext: { recordDate, exerciseTypeId, scheduleId } - 저장에 필요한 컨텍스트
- * placeColors: EXPEDITION_CLIMBS 카드 - 장소별 난이도 색상 [{ color_hex, grade_label, sort_order }]
+ * placeId: EXPEDITION_CLIMBS 카드 - 장소 id (종목별 난이도 조회용)
+ * placeColors: EXPEDITION_CLIMBS 카드 - 장소별 난이도 색상 fallback [{ color_hex, grade_label, sort_order }]
  * expeditionLatestRecord: EXPEDITION_CLIMBS 카드 - 해당 장소 이전 기록 { payload }
  */
 export default function DayContentCard({
@@ -877,6 +886,7 @@ export default function DayContentCard({
   saveContext,
   todayRecord,
   latestRecord,
+  placeId = null,
   placeColors = [],
   expeditionLatestRecord,
   isEditingRecord,
@@ -1017,6 +1027,7 @@ export default function DayContentCard({
     case CARD_TYPES.EXPEDITION_CLIMBS:
       return (
         <ExpeditionClimbsBlock
+          placeId={placeId}
           placeColors={placeColors}
           onSave={saveContext ? (p, t) => onSave?.(p, t) : undefined}
           onEdit={onEditRecord}

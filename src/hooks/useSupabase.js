@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { getTodayKST, toDateStringKST } from '../utils/date'
@@ -915,8 +915,8 @@ function getChartValueFromPayload(dayType, detailType, payload) {
   return null
 }
 
-// 장소별 난이도 색상 (색깔 + V급) - 운동장소마다 다름
-export function usePlaceDifficultyColors(placeId) {
+// 장소별 난이도 색상 (종목별: 볼더링/리드) - discipline 없으면 전체
+export function usePlaceDifficultyColors(placeId, discipline = null) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -926,18 +926,52 @@ export function usePlaceDifficultyColors(placeId) {
       setLoading(false)
       return
     }
-    supabase
+    let q = supabase
       .from('place_difficulty_colors')
-      .select('id, color_hex, grade_label, sort_order')
+      .select('id, discipline, color_hex, grade_label, sort_order')
       .eq('place_id', placeId)
-      .order('sort_order', { ascending: true })
-      .then(({ data: rows }) => {
+    if (discipline) q = q.eq('discipline', discipline)
+    q.order('discipline').order('sort_order', { ascending: true })
+      .then(({ data: rows, error }) => {
+        if (error) throw error
         setData(rows ?? [])
         setLoading(false)
       })
-  }, [placeId])
+      .catch(async (err) => {
+        if (err?.code === '42703' || err?.message?.includes('discipline')) {
+          // discipline 컬럼 없음 → 마이그레이션 022 미적용, 구버전 스키마로 재시도
+          const { data: fallback } = await supabase
+            .from('place_difficulty_colors')
+            .select('id, color_hex, grade_label, sort_order')
+            .eq('place_id', placeId)
+            .order('sort_order', { ascending: true })
+          setData((fallback ?? []).map((r) => ({ ...r, discipline: 'bouldering' })))
+        } else {
+          console.error('place_difficulty_colors 조회 실패:', err)
+          setData([])
+        }
+        setLoading(false)
+      })
+  }, [placeId, discipline])
 
   return { data, loading }
+}
+
+// 장소별 종목별 난이도 맵 { bouldering: [...], lead: [...] }
+export function usePlaceDifficultyByDiscipline(placeId) {
+  const { data, loading } = usePlaceDifficultyColors(placeId)
+  const byDiscipline = useMemo(() => {
+    const map = { bouldering: [], lead: [] }
+    ;(data ?? []).forEach((row) => {
+      const d = row.discipline || 'bouldering'
+      if (!map[d]) map[d] = []
+      map[d].push(row)
+    })
+    map.bouldering.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    map.lead.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    return map
+  }, [data])
+  return { data: byDiscipline, loading }
 }
 
 // 해당 장소에서의 가장 최근 원정 기록 (오늘 제외) - 상위 2개 난이도만 사용

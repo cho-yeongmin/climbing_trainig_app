@@ -537,7 +537,31 @@ html.is-landscape-short .day-card__title {
   line-height: 1.5;
 }
 
-/* 원정 당일: 색상(난이도)별 완등 수 기록 */
+/* 원정 당일: 색상(난이도)별 완등 수 기록 (볼더링/리드) */
+.day-card__expedition-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.day-card__expedition-sections--2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 480px) {
+  .day-card__expedition-sections--2col {
+    grid-template-columns: 1fr;
+  }
+}
+.day-card__expedition-section {
+  min-width: 0;
+}
+.day-card__expedition-discipline {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #5f6368;
+}
 .day-card__expedition-color {
   flex-shrink: 0;
   width: 2rem;

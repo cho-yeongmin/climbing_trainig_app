@@ -1,0 +1,15 @@
+﻿place_id,color_hex,grade_label,sort_order,discipline
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffc0cb,5.10a,0,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffc0cb,5.10b,1,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffff00,5.10c,2,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffff00,5.10d,3,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ff0000,5.11a,4,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ff0000,5.11b,5,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#0000ff,5.11c,6,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#0000ff,5.11d,7,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffffff,5.12a,8,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffffff,5.12b,9,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#87ceeb,5.12c,10,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#87ceeb,5.12d,11,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffa500,5.13a,12,lead
+58ad8108-dfda-4e76-96ae-710fb605b625,#ffa500,5.13b,13,lead

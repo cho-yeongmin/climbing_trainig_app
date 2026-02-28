@@ -4,6 +4,7 @@ import { useShareBadge, markShareModalSeen } from '../hooks/useShareRequests'
 import { useTeamJoinBadge, markTeamJoinModalSeen } from '../hooks/useProfile'
 import { useNextExpeditionFromMySchedule, useExerciseTypes, useTodayScheduleFromMySchedule, useTodayTrainingRecord, useTodayTrainingRecords, useLatestTrainingRecord, usePlaceDifficultyColors, useLatestExpeditionRecordByPlace, saveTrainingRecord, deleteTodayTrainingRecord } from '../hooks/useSupabase'
 import { lockLandscape, unlockOrientation, canLockOrientation } from '../utils/orientationLock'
+import { setForceLandscape, getForceLandscape } from '../utils/orientation'
 import { getDayContentByType } from '../data/dayContent'
 import { lazy, Suspense } from 'react'
 import DayContentCard from './DayContentCard'
@@ -145,6 +146,7 @@ export default function HomeScreen() {
   const [showTimerModal, setShowTimerModal] = useState(false)
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [orientationLocked, setOrientationLocked] = useState(false)
+  const [forceLandscape, setForceLandscapeState] = useState(() => getForceLandscape())
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -307,6 +309,7 @@ export default function HomeScreen() {
                         saveContext={block.saveContext}
                         todayRecord={blockRecord ? { detailType: blockRecord.detailType, payload: blockRecord.payload } : null}
                         latestRecord={latestRecord}
+                        placeId={block.schedule?.place_id ?? null}
                         placeColors={placeColors ?? []}
                         expeditionLatestRecord={block.dayTypeId === 'expedition' ? expeditionLatestRecord : undefined}
                         isEditingRecord={editingRecordScheduleId === blockEditKey}
@@ -330,6 +333,7 @@ export default function HomeScreen() {
                   saveContext={saveContext}
                   todayRecord={todayRecord}
                   latestRecord={latestRecord}
+                  placeId={firstSchedule?.place_id ?? null}
                   placeColors={placeColors ?? []}
                   expeditionLatestRecord={expeditionLatestRecord}
                   isEditingRecord={isEditingRecord}
@@ -360,23 +364,33 @@ export default function HomeScreen() {
           type="button"
           className="home-screen__landscape-btn"
           onClick={async () => {
-            if (orientationLocked) {
-              await unlockOrientation()
-              setOrientationLocked(false)
+            const isOn = orientationLocked || forceLandscape
+            if (isOn) {
+              if (orientationLocked) {
+                await unlockOrientation()
+                setOrientationLocked(false)
+              } else {
+                setForceLandscape(false)
+                setForceLandscapeState(false)
+              }
               return
             }
-            if (!canLockOrientation()) {
-              alert('이 브라우저는 화면 회전 잠금을 지원하지 않습니다. 기기를 가로로 돌려 주세요.')
-              return
+            if (canLockOrientation()) {
+              const ok = await lockLandscape()
+              if (ok) setOrientationLocked(true)
+              else {
+                setForceLandscape(true)
+                setForceLandscapeState(true)
+              }
+            } else {
+              setForceLandscape(true)
+              setForceLandscapeState(true)
             }
-            const ok = await lockLandscape()
-            if (ok) setOrientationLocked(true)
-            else alert('화면 잠금에 실패했습니다. 기기를 가로로 돌려 주세요.')
           }}
-          aria-pressed={orientationLocked}
-          aria-label="가로 모드 화면 잠금"
+          aria-pressed={orientationLocked || forceLandscape}
+          aria-label="가로 모드 전환"
         >
-          {orientationLocked ? '가로 모드 끄기' : '가로 모드'}
+          {orientationLocked || forceLandscape ? '가로 모드 끄기' : '가로 모드'}
         </button>
       </main>
       )}
