@@ -4,7 +4,6 @@
   background: #fff;
   font-family: 'Outfit', -apple-system, sans-serif;
   padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
-  border-top: 1px solid #fff;
 }
 
 .home-screen__main {

@@ -30,10 +30,14 @@
   box-sizing: border-box;
 }
 
+html {
+  background: #fff;
+}
+
 body {
   margin: 0;
   font-family: 'Outfit', -apple-system, sans-serif;
-  background: var(--bg-primary);
+  background: #fff;
   color: var(--text-primary);
   line-height: 1.5;
   min-height: 100vh;
