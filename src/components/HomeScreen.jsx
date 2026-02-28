@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useShareBadge, markShareModalSeen } from '../hooks/useShareRequests'
 import { useTeamJoinBadge, markTeamJoinModalSeen } from '../hooks/useProfile'
@@ -25,35 +25,9 @@ const TABS = [
   { id: 'spraywall', label: '스프레이월' },
 ]
 
-const SWIPE_THRESHOLD = 50
-
 export default function HomeScreen() {
   const { logout, user, profile, teamId, isAdmin, isSupervisor, refetchProfile } = useAuth()
   const [activeTab, setActiveTab] = useState('home')
-  const swipeStartX = useRef(0)
-
-  const tabIds = TABS.map((t) => t.id)
-  const currentIndex = tabIds.indexOf(activeTab)
-
-  const goPrevTab = useCallback(() => {
-    if (currentIndex > 0) setActiveTab(tabIds[currentIndex - 1])
-  }, [currentIndex, tabIds])
-
-  const goNextTab = useCallback(() => {
-    if (currentIndex < tabIds.length - 1) setActiveTab(tabIds[currentIndex + 1])
-  }, [currentIndex, tabIds])
-
-  const handleSwipeStart = (e) => {
-    swipeStartX.current = e.touches ? e.touches[0].clientX : e.clientX
-  }
-  const handleSwipeEnd = (e) => {
-    const endX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX
-    const diff = swipeStartX.current - endX
-    if (Math.abs(diff) >= SWIPE_THRESHOLD) {
-      if (diff > 0) goNextTab()
-      else goPrevTab()
-    }
-  }
 
   const { data: nextExpedition, loading: nextExpeditionLoading, refetch: refetchNextExpedition } = useNextExpeditionFromMySchedule(user?.id)
   const { data: exerciseTypes } = useExerciseTypes()
@@ -212,19 +186,7 @@ export default function HomeScreen() {
   )
 
   return (
-    <div
-      className="home-screen"
-      onTouchStart={handleSwipeStart}
-      onTouchEnd={handleSwipeEnd}
-      onMouseDown={(e) => { swipeStartX.current = e.clientX }}
-      onMouseUp={(e) => {
-        const diff = swipeStartX.current - e.clientX
-        if (Math.abs(diff) >= SWIPE_THRESHOLD) {
-          if (diff > 0) goNextTab()
-          else goPrevTab()
-        }
-      }}
-    >
+    <div className="home-screen">
       {showTimerModal ? (
         <div className="timer-fullscreen">
           <TimerView dayTypeId={dayTypeId} onClose={() => setShowTimerModal(false)} />
