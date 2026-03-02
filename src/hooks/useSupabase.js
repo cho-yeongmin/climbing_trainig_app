@@ -975,6 +975,7 @@ export function usePlaceDifficultyByDiscipline(placeId) {
 }
 
 // 해당 장소에서의 가장 최근 원정 기록 (오늘 제외) - 상위 2개 난이도만 사용
+// 팀 일정(schedules) + 내 일정(user_personal_schedules) 모두 포함
 export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExerciseTypeId) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -987,19 +988,20 @@ export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExer
       return
     }
     let cancelled = false
-    supabase
-      .from('schedules')
-      .select('id')
-      .eq('place_id', placeId)
-      .then(({ data: scheds }) => {
-        if (cancelled) return
+    Promise.all([
+      supabase.from('schedules').select('id').eq('place_id', placeId),
+      supabase
+        .from('user_personal_schedules')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('place_id', placeId),
+    ])
+      .then(([{ data: scheds }, { data: persScheds }]) => {
+        if (cancelled) return null
         const scheduleIds = (scheds ?? []).map((s) => s.id)
-        if (scheduleIds.length === 0) {
-          setData(null)
-          setLoading(false)
-          return Promise.resolve(null)
-        }
-        return supabase
+        const personalScheduleIds = (persScheds ?? []).map((s) => s.id)
+
+        let q = supabase
           .from('training_records')
           .select(`
             id,
@@ -1009,9 +1011,20 @@ export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExer
           .eq('user_id', userId)
           .eq('exercise_type_id', expeditionExerciseTypeId)
           .lt('record_date', todayStr)
-          .in('schedule_id', scheduleIds)
-          .order('record_date', { ascending: false })
-          .limit(1)
+
+        if (scheduleIds.length > 0 && personalScheduleIds.length > 0) {
+          q = q.or(`schedule_id.in.(${scheduleIds.join(',')}),personal_schedule_id.in.(${personalScheduleIds.join(',')})`)
+        } else if (scheduleIds.length > 0) {
+          q = q.in('schedule_id', scheduleIds)
+        } else if (personalScheduleIds.length > 0) {
+          q = q.in('personal_schedule_id', personalScheduleIds)
+        } else {
+          setData(null)
+          setLoading(false)
+          return null
+        }
+
+        return q.order('record_date', { ascending: false }).limit(1)
       })
       .then((res) => {
         if (cancelled || !res) return
