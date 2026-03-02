@@ -976,6 +976,16 @@ export function usePlaceDifficultyByDiscipline(placeId) {
 
 // 해당 장소에서의 가장 최근 원정 기록 (오늘 제외) - 상위 2개 난이도만 사용
 // 팀 일정(schedules) + 내 일정(user_personal_schedules) 모두 포함
+function parseLatestExpedition(rows) {
+  if (!rows || rows.length === 0) return null
+  const row = rows[0]
+  const details = row?.training_record_details ?? []
+  const detail = Array.isArray(details) ? details[0] : details
+  return detail?.detail_type === 'expedition_climbs' && detail?.payload
+    ? { payload: detail.payload, recordDate: row?.record_date }
+    : null
+}
+
 export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExerciseTypeId) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -988,6 +998,19 @@ export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExer
       return
     }
     let cancelled = false
+
+    const baseFilter = (q) =>
+      q
+        .eq('user_id', userId)
+        .eq('exercise_type_id', expeditionExerciseTypeId)
+        .lt('record_date', todayStr)
+
+    const fetchRecords = (q) =>
+      q
+        .select(`id, record_date, training_record_details(detail_type, payload)`)
+        .order('record_date', { ascending: false })
+        .limit(1)
+
     Promise.all([
       supabase.from('schedules').select('id').eq('place_id', placeId),
       supabase
@@ -997,46 +1020,37 @@ export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExer
         .eq('place_id', placeId),
     ])
       .then(([{ data: scheds }, { data: persScheds }]) => {
-        if (cancelled) return null
+        if (cancelled) return Promise.resolve([])
         const scheduleIds = (scheds ?? []).map((s) => s.id)
         const personalScheduleIds = (persScheds ?? []).map((s) => s.id)
 
-        let q = supabase
-          .from('training_records')
-          .select(`
-            id,
-            record_date,
-            training_record_details(detail_type, payload)
-          `)
-          .eq('user_id', userId)
-          .eq('exercise_type_id', expeditionExerciseTypeId)
-          .lt('record_date', todayStr)
-
-        if (scheduleIds.length > 0 && personalScheduleIds.length > 0) {
-          q = q.or(`schedule_id.in.(${scheduleIds.join(',')}),personal_schedule_id.in.(${personalScheduleIds.join(',')})`)
-        } else if (scheduleIds.length > 0) {
-          q = q.in('schedule_id', scheduleIds)
-        } else if (personalScheduleIds.length > 0) {
-          q = q.in('personal_schedule_id', personalScheduleIds)
-        } else {
-          setData(null)
-          setLoading(false)
-          return null
+        const promises = []
+        if (scheduleIds.length > 0) {
+          promises.push(
+            fetchRecords(baseFilter(supabase.from('training_records').in('schedule_id', scheduleIds)))
+          )
+        }
+        if (personalScheduleIds.length > 0) {
+          promises.push(
+            fetchRecords(
+              baseFilter(supabase.from('training_records').in('personal_schedule_id', personalScheduleIds))
+            )
+          )
         }
 
-        return q.order('record_date', { ascending: false }).limit(1)
+        if (promises.length === 0) return Promise.resolve([null, null])
+        return Promise.all(promises)
       })
-      .then((res) => {
-        if (cancelled || !res) return
-        const rows = res.data ?? []
-        const row = Array.isArray(rows) ? rows[0] : rows
-        const details = row?.training_record_details ?? []
-        const detail = Array.isArray(details) ? details[0] : details
-        setData(
-          detail?.detail_type === 'expedition_climbs' && detail?.payload
-            ? { payload: detail.payload, recordDate: row?.record_date }
-            : null
-        )
+      .then((results) => {
+        if (cancelled) return
+        const allRows = (results ?? []).flatMap((r) => (r?.data ?? []))
+        if (allRows.length === 0) {
+          setData(null)
+          setLoading(false)
+          return
+        }
+        const sorted = allRows.sort((a, b) => (b?.record_date || '').localeCompare(a?.record_date || ''))
+        setData(parseLatestExpedition(sorted))
         setLoading(false)
       })
       .catch(() => !cancelled && setLoading(false))
