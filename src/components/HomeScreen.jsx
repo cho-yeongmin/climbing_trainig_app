@@ -82,11 +82,20 @@ export default function HomeScreen() {
   )
 
   const placeId = firstSchedule?.place_id ?? null
+  const expeditionBlock = useMemo(
+    () => todaySchedules.find((s) => (s?.exercise_types?.day_type_id ?? 'rest') === 'expedition'),
+    [todaySchedules]
+  )
+  const expeditionPlaceId = expeditionBlock?.place_id ?? null
+  const expeditionExerciseType = useMemo(
+    () => exerciseTypes?.find((t) => t.day_type_id === 'expedition'),
+    [exerciseTypes]
+  )
   const { data: placeColors } = usePlaceDifficultyColors(placeId)
   const { data: expeditionLatestRecord } = useLatestExpeditionRecordByPlace(
     user?.id,
-    placeId,
-    dayTypeId === 'expedition' ? exerciseType?.id : null
+    expeditionPlaceId,
+    expeditionExerciseType?.id ?? null
   )
 
   const scheduleBlocks = useMemo(() => {
@@ -320,7 +329,7 @@ export default function HomeScreen() {
 
         {activeTab === 'log' && <ExerciseLogView />}
 
-        {activeTab === 'spraywall' && <SprayWallView userId={user?.id} />}
+        {activeTab === 'spraywall' && <SprayWallView userId={user?.id} teamId={teamId} />}
 
         <button
           type="button"

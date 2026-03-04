@@ -11,7 +11,7 @@ const SCREENS = {
   gallery: 'gallery',
 }
 
-export default function SprayWallView({ userId }) {
+export default function SprayWallView({ userId, teamId }) {
   const [screen, setScreen] = useState(SCREENS.menu)
   const [galleryType, setGalleryType] = useState(null)
   const [problemType, setProblemType] = useState(null)
@@ -41,6 +41,7 @@ export default function SprayWallView({ userId }) {
     try {
       await saveSprayWallProblem({
         userId,
+        teamId: teamId ?? null,
         name,
         type,
         imageData,
@@ -109,6 +110,7 @@ export default function SprayWallView({ userId }) {
     return (
       <SprayWallGalleryView
         userId={userId}
+        teamId={teamId}
         galleryType={galleryType}
         onBack={handleBackToMenu}
       />

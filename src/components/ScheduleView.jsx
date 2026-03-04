@@ -195,12 +195,11 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
     }
   }
 
-  const selectedSchedule = useMemo(() => {
-    if (!selectedDate) return null
+  const selectedSchedules = useMemo(() => {
+    if (!selectedDate) return []
     const dateStr = `${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`
     const arr = scheduleMap?.[dateStr]
-    const list = Array.isArray(arr) ? arr : (arr ? [arr] : [])
-    return list[0] ?? null
+    return Array.isArray(arr) ? arr : (arr ? [arr] : [])
   }, [selectedDate, scheduleMap])
 
   const selectedDayMyItems = useMemo(() => {
@@ -546,26 +545,30 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
             <div className="schedule-view__info-placeholder">날짜를 선택하세요</div>
           )
         ) : selectedDate ? (
-          selectedSchedule ? (
-            <div className="schedule-view__info-card">
-              <div className="schedule-view__info-icon" aria-hidden>
-                {selectedSchedule.place?.image_url || selectedSchedule.exerciseType?.image_url ? (
-                  <img
-                    src={selectedSchedule.place?.image_url || selectedSchedule.exerciseType?.image_url}
-                    alt=""
-                  />
-                ) : (
-                  <span />
-                )}
-              </div>
-              <div className="schedule-view__info-body">
-                <div className="schedule-view__info-title">
-                  {selectedSchedule.place?.name || selectedSchedule.exerciseType?.name || '일정'}
+          selectedSchedules.length > 0 ? (
+            <div className="schedule-view__info-list">
+              {selectedSchedules.map((s) => (
+                <div key={s.id} className="schedule-view__info-card">
+                  <div className="schedule-view__info-icon" aria-hidden>
+                    {s.place?.image_url || s.exerciseType?.image_url ? (
+                      <img
+                        src={s.place?.image_url || s.exerciseType?.image_url}
+                        alt=""
+                      />
+                    ) : (
+                      <span />
+                    )}
+                  </div>
+                  <div className="schedule-view__info-body">
+                    <div className="schedule-view__info-title">
+                      {s.place?.name || s.exerciseType?.name || '일정'}
+                    </div>
+                    {(s.place?.address) && (
+                      <div className="schedule-view__info-address">{s.place.address}</div>
+                    )}
+                  </div>
                 </div>
-                {(selectedSchedule.place?.address) && (
-                  <div className="schedule-view__info-address">{selectedSchedule.place.address}</div>
-                )}
-              </div>
+              ))}
             </div>
           ) : (
             <div className="schedule-view__info-empty">일정이 없습니다.</div>
@@ -602,10 +605,13 @@ export default function ScheduleView({ hasShareBadge = false, sharedCount, onSha
         </button>
       )}
 
-      {canEditSelectedTeam && showAddSchedule && (
+      {canEditSelectedTeam && showAddSchedule && selectedDate && (
         <AddScheduleView
           selectedDate={selectedDate}
           teamId={displayTeamId}
+          existingSchedules={
+            scheduleMap?.[`${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`] ?? []
+          }
           onClose={() => setShowAddSchedule(false)}
           onSuccess={() => refetchSchedules()}
         />

@@ -1,18 +1,20 @@
 import { useState } from 'react'
-import { useExerciseTypes, createSchedules, getExpeditionExerciseTypeId } from '../hooks/useSupabase'
+import { useExerciseTypes, createSchedules, getExpeditionExerciseTypeId, deleteTeamSchedule } from '../hooks/useSupabase'
 import LocationSelectView from './LocationSelectView'
 import './AddScheduleView.css'
 
 /**
  * 관리자용 일정 추가 - 장소/훈련 복수 선택
+ * existingSchedules: 해당 날짜의 기존 팀 일정 목록 [{ id, date, exerciseType, place }, ...]
  */
-export default function AddScheduleView({ selectedDate, teamId, onClose, onSuccess }) {
+export default function AddScheduleView({ selectedDate, teamId, existingSchedules = [], onClose, onSuccess }) {
   const { data: exerciseTypes } = useExerciseTypes()
   const [selectedPlaces, setSelectedPlaces] = useState([])
   const [selectedTrainings, setSelectedTrainings] = useState([])
   const [showTrainingPicker, setShowTrainingPicker] = useState(false)
   const [showLocationSelect, setShowLocationSelect] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
   const [error, setError] = useState('')
 
   const getExpeditionType = () =>
@@ -36,6 +38,19 @@ export default function AddScheduleView({ selectedDate, teamId, onClose, onSucce
 
   const handleRemoveTraining = (id) => {
     setSelectedTrainings((prev) => prev.filter((t) => t.id !== id))
+  }
+
+  const handleDeleteSchedule = async (scheduleId) => {
+    setDeletingId(scheduleId)
+    setError('')
+    try {
+      await deleteTeamSchedule(scheduleId)
+      onSuccess?.()
+    } catch (err) {
+      setError(err.message ?? '일정 삭제에 실패했습니다.')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const handleSubmit = async () => {
@@ -156,6 +171,33 @@ export default function AddScheduleView({ selectedDate, teamId, onClose, onSucce
         </section>
 
         {error && <p className="add-schedule__error">{error}</p>}
+
+        {/* 기존 일정 목록 */}
+        {existingSchedules.length > 0 && (
+          <section className="add-schedule__existing">
+            <h2 className="add-schedule__existing-title">해당 날짜의 일정</h2>
+            <ul className="add-schedule__existing-list">
+              {existingSchedules.map((s) => {
+                const label = s.place?.name ?? s.exerciseType?.name ?? '일정'
+                const isDeleting = deletingId === s.id
+                return (
+                  <li key={s.id} className="add-schedule__existing-item">
+                    <span className="add-schedule__existing-label">{label}</span>
+                    <button
+                      type="button"
+                      className="add-schedule__existing-delete"
+                      onClick={() => handleDeleteSchedule(s.id)}
+                      disabled={isDeleting}
+                      aria-label={`${label} 삭제`}
+                    >
+                      {isDeleting ? '삭제 중...' : '삭제'}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
 
         <button
           type="button"

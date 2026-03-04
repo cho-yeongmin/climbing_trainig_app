@@ -11,8 +11,8 @@ const GALLERY_TITLES = {
   endurance: '지구력 갤러리',
 }
 
-export default function SprayWallGalleryView({ userId, galleryType, onBack }) {
-  const { data: problems, loading, refetch } = useSprayWallProblems(userId, galleryType)
+export default function SprayWallGalleryView({ userId, teamId, galleryType, onBack }) {
+  const { data: problems, loading, refetch } = useSprayWallProblems(teamId, userId, galleryType)
   const [modalIndex, setModalIndex] = useState(-1)
   const [tagEditId, setTagEditId] = useState(null)
   const [tagEditTags, setTagEditTags] = useState([])
@@ -185,22 +185,24 @@ export default function SprayWallGalleryView({ userId, galleryType, onBack }) {
             <div className="spray-wall-gallery__modal-title">
               {currentModalProblem.name}
             </div>
-            <div className="spray-wall-gallery__modal-actions">
-              <button
-                type="button"
-                className="spray-wall-gallery__action-btn"
-                onClick={() => handleOpenTagEdit(currentModalProblem)}
-              >
-                태그 편집
-              </button>
-              <button
-                type="button"
-                className="spray-wall-gallery__action-btn spray-wall-gallery__action-btn--danger"
-                onClick={() => handleDeleteClick(currentModalProblem.id)}
-              >
-                삭제
-              </button>
-            </div>
+            {(currentModalProblem.user_id === userId) && (
+              <div className="spray-wall-gallery__modal-actions">
+                <button
+                  type="button"
+                  className="spray-wall-gallery__action-btn"
+                  onClick={() => handleOpenTagEdit(currentModalProblem)}
+                >
+                  태그 편집
+                </button>
+                <button
+                  type="button"
+                  className="spray-wall-gallery__action-btn spray-wall-gallery__action-btn--danger"
+                  onClick={() => handleDeleteClick(currentModalProblem.id)}
+                >
+                  삭제
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

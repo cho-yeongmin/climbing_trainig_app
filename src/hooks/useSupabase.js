@@ -372,6 +372,12 @@ export async function deletePersonalSchedule(scheduleId) {
   if (error) throw error
 }
 
+/** 팀 일정 삭제 (관리자용) */
+export async function deleteTeamSchedule(scheduleId) {
+  const { error } = await supabase.from('schedules').delete().eq('id', scheduleId)
+  if (error) throw error
+}
+
 // 다가오는 원정 일정 (가장 가까운 미래의 expedition 스케줄 1건) - teamId로 팀 필터
 export function useNextExpedition(teamId = null) {
   const [data, setData] = useState(null)
@@ -999,15 +1005,14 @@ export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExer
     }
     let cancelled = false
 
-    const baseFilter = (q) =>
-      q
+    const buildRecordsQuery = (column, ids) =>
+      supabase
+        .from('training_records')
+        .select('id, record_date, training_record_details(detail_type, payload)')
         .eq('user_id', userId)
         .eq('exercise_type_id', expeditionExerciseTypeId)
         .lt('record_date', todayStr)
-
-    const fetchRecords = (q) =>
-      q
-        .select(`id, record_date, training_record_details(detail_type, payload)`)
+        .in(column, ids)
         .order('record_date', { ascending: false })
         .limit(1)
 
@@ -1023,22 +1028,26 @@ export function useLatestExpeditionRecordByPlace(userId, placeId, expeditionExer
         if (cancelled) return Promise.resolve([])
         const scheduleIds = (scheds ?? []).map((s) => s.id)
         const personalScheduleIds = (persScheds ?? []).map((s) => s.id)
-
         const promises = []
         if (scheduleIds.length > 0) {
-          promises.push(
-            fetchRecords(baseFilter(supabase.from('training_records').in('schedule_id', scheduleIds)))
-          )
+          promises.push(buildRecordsQuery('schedule_id', scheduleIds))
         }
         if (personalScheduleIds.length > 0) {
-          promises.push(
-            fetchRecords(
-              baseFilter(supabase.from('training_records').in('personal_schedule_id', personalScheduleIds))
-            )
-          )
+          promises.push(buildRecordsQuery('personal_schedule_id', personalScheduleIds))
         }
+        // 수정 전 기록: schedule_id, personal_schedule_id 둘 다 null일 수 있음
+        const fallbackQuery = supabase
+          .from('training_records')
+          .select('id, record_date, training_record_details(detail_type, payload)')
+          .eq('user_id', userId)
+          .eq('exercise_type_id', expeditionExerciseTypeId)
+          .lt('record_date', todayStr)
+          .is('schedule_id', null)
+          .is('personal_schedule_id', null)
+          .order('record_date', { ascending: false })
+          .limit(1)
+        promises.push(fallbackQuery)
 
-        if (promises.length === 0) return Promise.resolve([null, null])
         return Promise.all(promises)
       })
       .then((results) => {
@@ -1104,12 +1113,17 @@ export async function createSchedules(teamId, date, items) {
 // 스프레이월 (문제내기)
 // =====================================================
 
-export function useSprayWallProblems(userId, type = null) {
+/**
+ * 스프레이월 문제 조회
+ * - teamId 있으면: 같은 팀 팀원이 만든 모든 문제
+ * - teamId 없으면: userId로 본인 문제만
+ */
+export function useSprayWallProblems(teamId, userId, type = null) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
-    if (!userId) {
+    if (!teamId && !userId) {
       setData([])
       setLoading(false)
       return
@@ -1117,9 +1131,13 @@ export function useSprayWallProblems(userId, type = null) {
     setLoading(true)
     let q = supabase
       .from('spray_wall_problems')
-      .select('id, name, type, image_data, tags, created_at')
-      .eq('user_id', userId)
+      .select('id, name, type, image_data, tags, created_at, user_id')
       .order('created_at', { ascending: false })
+    if (teamId) {
+      q = q.eq('team_id', teamId)
+    } else {
+      q = q.eq('user_id', userId)
+    }
     if (type && (type === 'bouldering' || type === 'endurance')) {
       q = q.eq('type', type)
     }
@@ -1135,7 +1153,7 @@ export function useSprayWallProblems(userId, type = null) {
       }
       setLoading(false)
     })
-  }, [userId, type])
+  }, [teamId, userId, type])
 
   useEffect(() => {
     refetch()
@@ -1144,11 +1162,12 @@ export function useSprayWallProblems(userId, type = null) {
   return { data, loading, refetch }
 }
 
-export async function saveSprayWallProblem({ userId, name, type, imageData, tags = [] }) {
+export async function saveSprayWallProblem({ userId, teamId, name, type, imageData, tags = [] }) {
   const { data, error } = await supabase
     .from('spray_wall_problems')
     .insert({
       user_id: userId,
+      team_id: teamId ?? null,
       name: name.trim(),
       type,
       image_data: imageData,

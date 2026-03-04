@@ -377,6 +377,13 @@ html.is-landscape-short .schedule-view__date-info {
   justify-content: center;
 }
 
+/* 여러 일정 목록 */
+.schedule-view__info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* Figma: Chart 카드 - 52px 높이, 파란 아이콘 34x34 */
 .schedule-view__info-card {
   display: flex;
