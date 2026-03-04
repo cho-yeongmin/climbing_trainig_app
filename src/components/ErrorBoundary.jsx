@@ -5,6 +5,9 @@ export default class ErrorBoundary extends Component {
   state = { error: null }
 
   static getDerivedStateFromError(error) {
+    if (typeof console !== 'undefined' && console.error) {
+      console.error('[ErrorBoundary]', error)
+    }
     return { error }
   }
 

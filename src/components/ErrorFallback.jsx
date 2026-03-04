@@ -1,5 +1,7 @@
 import './ErrorFallback.css'
 
+const isDev = import.meta.env.DEV
+
 export default function ErrorFallback({ error, reset }) {
   const isConnectionError =
     error?.message?.toLowerCase().includes('connection') ||
@@ -28,6 +30,11 @@ export default function ErrorFallback({ error, reset }) {
             </>
           )}
         </p>
+        {isDev && error?.message && (
+          <pre className="error-fallback__debug" aria-hidden>
+            {error.message}
+          </pre>
+        )}
         <button type="button" className="error-fallback__button" onClick={reset}>
           새로고침
         </button>

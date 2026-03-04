@@ -53,7 +53,7 @@ export default function HomeScreen() {
   )
 
   const exerciseType = useMemo(
-    () => exerciseTypes.find((t) => t.day_type_id === dayTypeId),
+    () => (exerciseTypes ?? []).find((t) => t.day_type_id === dayTypeId),
     [exerciseTypes, dayTypeId]
   )
 
@@ -101,7 +101,7 @@ export default function HomeScreen() {
   const scheduleBlocks = useMemo(() => {
     return todaySchedules.map((sched) => {
       const schedDayTypeId = sched?.exercise_types?.day_type_id ?? 'rest'
-      const schedExerciseType = exerciseTypes?.find((t) => t.day_type_id === schedDayTypeId)
+      const schedExerciseType = (exerciseTypes ?? []).find((t) => t.day_type_id === schedDayTypeId)
       const isPersonal = sched?.isPersonal === true
       const schedSaveContext =
         user?.id && schedExerciseType?.id

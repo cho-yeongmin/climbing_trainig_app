@@ -55,6 +55,18 @@
   color: var(--accent, #f97316);
 }
 
+.error-fallback__debug {
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--bg-elevated, #243044);
+  border-radius: 8px;
+  color: var(--text-secondary, #94a3b8);
+}
+
 .error-fallback__button {
   padding: 0.75rem 1.25rem;
   min-height: 48px;
