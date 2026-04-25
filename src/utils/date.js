@@ -15,3 +15,14 @@ export function toDateStringKST(dateOrString) {
   if (!dateOrString) return null
   return dateOrString.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
 }
+
+/** YYYY-MM-DD 캘린더 날짜에 n일 더하기 (KST/한국 앱용 달력 연산) */
+export function addDaysYmd(ymd, n) {
+  if (!ymd || typeof ymd !== 'string') return null
+  const p = ymd.split('-').map(Number)
+  if (p.length < 3) return null
+  const [y, m, d] = p
+  const t = Date.UTC(y, m - 1, d) + n * 86400000
+  const u = new Date(t)
+  return `${u.getUTCFullYear()}-${String(u.getUTCMonth() + 1).padStart(2, '0')}-${String(u.getUTCDate()).padStart(2, '0')}`
+}

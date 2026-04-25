@@ -1,0 +1,110 @@
+.expedition-weather {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e8eaed;
+}
+
+.expedition-weather--muted .expedition-weather__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.expedition-weather__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5f6368;
+  letter-spacing: -0.02em;
+}
+
+.expedition-weather__scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.expedition-weather__day {
+  flex: 0 0 auto;
+  min-width: 4.5rem;
+  padding: 0.5rem 0.4rem;
+  text-align: center;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e8eaed;
+}
+
+.expedition-weather__day-top {
+  font-size: 0.65rem;
+  color: #5f6368;
+  margin-bottom: 0.2rem;
+}
+
+.expedition-weather__w {
+  margin-left: 0.1rem;
+  font-size: 0.6rem;
+}
+
+.expedition-weather__icon {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  margin: 0.1rem 0;
+}
+
+.expedition-weather__label {
+  font-size: 0.65rem;
+  color: #202124;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 5.5rem;
+}
+
+.expedition-weather__temp {
+  font-size: 0.65rem;
+  color: #5f6368;
+  margin-top: 0.2rem;
+}
+
+.expedition-weather__rain {
+  font-size: 0.6rem;
+  color: #1967d2;
+  margin-top: 0.1rem;
+}
+
+.expedition-weather__credit {
+  margin: 0.4rem 0 0 0;
+  font-size: 0.6rem;
+  color: #9aa0a6;
+  text-align: right;
+}
+
+.expedition-weather__skeleton {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.expedition-weather__skeleton span {
+  flex: 1;
+  min-width: 3.5rem;
+  height: 4.5rem;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #f1f3f4 0%, #e8eaed 50%, #f1f3f4 100%);
+  background-size: 200% 100%;
+  animation: expedition-weather-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes expedition-weather-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

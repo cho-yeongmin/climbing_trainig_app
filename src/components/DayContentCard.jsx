@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { CARD_TYPES } from '../data/dayTypes'
 import { usePlaceDifficultyByDiscipline } from '../hooks/useSupabase'
+import ExpeditionWeather from './ExpeditionWeather'
 import './DayContentCard.css'
 
 /**
@@ -858,6 +859,7 @@ function DdayCard({ nextExpeditionLoading, nextExpedition }) {
           {nextExpedition.dateLabel && (
             <p className="day-card__date">{nextExpedition.dateLabel}</p>
           )}
+          <ExpeditionWeather nextExpedition={nextExpedition} />
         </>
       )}
     </article>
