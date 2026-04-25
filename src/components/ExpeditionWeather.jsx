@@ -83,7 +83,7 @@ export default function ExpeditionWeather({ nextExpedition }) {
           )
         })}
       </div>
-      <p className="expedition-weather__credit">데이터: Open-Meteo · 저장: 새벽 일괄 + 최초 열람 시</p>
+      <p className="expedition-weather__credit">데이터: Open-Meteo, 근일·기상청 동네단기(서버 KMA 키 시) · 저장: 새벽·최초 열람</p>
     </div>
   )
 }

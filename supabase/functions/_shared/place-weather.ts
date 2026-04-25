@@ -1,10 +1,12 @@
 /**
- * Open-Meteo → place_weather_daily upsert (nightly-weather, refresh-place-weather 공용)
+ * place_weather_daily: 근일 → 기상청 동네단기(혼합), 이후 → Open-Meteo
  *
- * 좌표: 1) KAKAO_REST_API_KEY 있으면 카카오 로컬(주소·키워드) → 2) Open-Meteo 지오
- * Supabase: Project Settings → Edge Functions (Secrets) → KAKAO_REST_API_KEY = KakaoAK 아닌 REST API 키
+ * Supabase Edge Secrets:
+ * - KAKAO_REST_API_KEY: 카카오 REST (지오, 선택)
+ * - KMA_SERVICE_KEY (또는 DATA_GO_KR_SERVICE_KEY): 공공데이터 일반인증키
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10'
+import { fetchKmaVilageShortTerm } from './kma_vilage.ts'
 
 const KAKAO_ADDR = 'https://dapi.kakao.com/v2/local/search/address.json'
 const KAKAO_KEYWORD = 'https://dapi.kakao.com/v2/local/search/keyword.json'
@@ -238,6 +240,7 @@ export type UpsertResult =
 
 /**
  * KST 기준 오늘부터 16일(오늘+15) 예보를 place_id에 upsert
+ * (KMA_SERVICE_KEY로 단기~3일 전후 병합, 없으면 전부 Open-Meteo)
  */
 export async function upsertPlaceWeatherForPlace(
   supabase: SupabaseClient,
@@ -260,15 +263,60 @@ export async function upsertPlaceWeatherForPlace(
   const tmax = j.daily.temperature_2m_max ?? []
   const tmin = j.daily.temperature_2m_min ?? []
   const pprob = j.daily.precipitation_probability_max ?? []
-  const rows = times.map((t: string, i: number) => ({
-    place_id: place.id,
-    forecast_date: t,
-    weathercode: codes[i] != null ? Math.round(Number(codes[i])) : null,
-    tmin: tmin[i] != null ? Math.round(Number(tmin[i])) : null,
-    tmax: tmax[i] != null ? Math.round(Number(tmax[i])) : null,
-    precip_prob: pprob[i] != null ? Math.round(Number(pprob[i])) : null,
-    fetched_at: now,
-  }))
+
+  const kmaKey =
+    typeof Deno !== 'undefined'
+      ? (Deno.env.get('KMA_SERVICE_KEY') ?? Deno.env.get('DATA_GO_KR_SERVICE_KEY'))?.trim() ?? ''
+      : ''
+  let kmaByDate: Map<string, { tmin: number | null; tmax: number | null; precipProb: number | null; wmo: number }> | null = null
+  if (kmaKey) {
+    const kf = await fetchKmaVilageShortTerm(kmaKey, pos.lat, pos.lon, (d, n) => addDaysYmd(d, n))
+    if (kf?.dailyByYmd && kf.dailyByYmd.size > 0) kmaByDate = kf.dailyByYmd
+  }
+
+  const rows: Array<{
+    place_id: string
+    forecast_date: string
+    weathercode: number | null
+    tmin: number | null
+    tmax: number | null
+    precip_prob: number | null
+    fetched_at: string
+  }> = []
+  const normDate = (s: string) => {
+    const p = s.split('-').map((x) => parseInt(x, 10))
+    if (p.length !== 3 || p.some((n) => Number.isNaN(n))) return s
+    return `${p[0]}-${String(p[1]).padStart(2, '0')}-${String(p[2]).padStart(2, '0')}`
+  }
+  for (let i = 0; i < times.length; i++) {
+    const fd = normDate(times[i] as string)
+    const k = kmaByDate?.get(fd)
+    const wmoOm = codes[i] != null ? Math.round(Number(codes[i])) : null
+    const tminOm = tmin[i] != null ? Math.round(Number(tmin[i])) : null
+    const tmaxOm = tmax[i] != null ? Math.round(Number(tmax[i])) : null
+    const popOm = pprob[i] != null ? Math.round(Number(pprob[i])) : null
+    if (k) {
+      rows.push({
+        place_id: place.id,
+        forecast_date: fd,
+        weathercode: k.wmo,
+        tmin: k.tmin != null ? k.tmin : tminOm,
+        tmax: k.tmax != null ? k.tmax : tmaxOm,
+        precip_prob: k.precipProb != null ? k.precipProb : popOm,
+        fetched_at: now,
+      })
+    } else {
+      rows.push({
+        place_id: place.id,
+        forecast_date: fd,
+        weathercode: wmoOm,
+        tmin: tminOm,
+        tmax: tmaxOm,
+        precip_prob: popOm,
+        fetched_at: now,
+      })
+    }
+  }
   const { error: ue } = await supabase.from('place_weather_daily').upsert(rows, {
     onConflict: 'place_id,forecast_date',
   })
