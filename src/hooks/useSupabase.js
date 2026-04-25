@@ -505,6 +505,7 @@ function normalizeNextExpedition(row) {
     date: dateStr,
     dateLabel,
     daysUntil,
+    placeId: place?.id ?? row.place_id ?? null,
     placeName: place?.name ?? '',
     placeAddress: place?.address ?? '',
   }

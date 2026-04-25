@@ -1,0 +1,10 @@
+# supabase init 시 생성; 없을 때 functions 배포용 최소 설정
+# 프로젝트에 맞게 project_id 연결: supabase link
+
+[functions.nightly-weather]
+# 스케줄/CRON·수동 invoke 시 JWT 없이 HTTP 호출 (x-cron-secret 권장)
+verify_jwt = false
+
+[functions.refresh-place-weather]
+# 로그인 사용자만 (Authorization으로 places RLS 검사)
+verify_jwt = true

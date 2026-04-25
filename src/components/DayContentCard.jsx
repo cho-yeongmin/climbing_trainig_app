@@ -869,7 +869,7 @@ function DdayCard({ nextExpeditionLoading, nextExpedition }) {
 /**
  * 백엔드에서 내려주는 카드 데이터(card)에 따라 카드 UI 렌더
  * card.type: dday | today_message | training_sets | training_sets_squares | previous_records | previous_records_strength | checklist | rest_strength_exercises | exercise_method | list | info
- * nextExpedition: DDAY 카드일 때만 전달. { dateLabel, daysUntil, placeName, placeAddress } 또는 null(미지정 시)
+ * nextExpedition: DDAY 카드일 때만. { date, dateLabel, daysUntil, placeId, placeName, placeAddress } 또는 null
  * nextExpeditionLoading: DDAY 카드 로딩 여부
  * onSave: 저장 시 호출 (payload, detailType) => void
  * saveContext: { recordDate, exerciseTypeId, scheduleId } - 저장에 필요한 컨텍스트

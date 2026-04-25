@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getTodayKST, addDaysYmd } from '../utils/date'
-import { geocodePlaceToLatLon } from '../utils/geocoding'
+import { supabase } from '../lib/supabase'
 
-/** WMO code → 짧은 한국어 (Open-Meteo daily weathercode) */
 function weathercodeLabel(code) {
   if (code == null) return '—'
   const c = Number(code)
@@ -30,69 +29,9 @@ function weathercodeIcon(code) {
   return '🌡️'
 }
 
-const FORECAST_CACHE_TTL_MS = 15 * 60 * 1000
-const forecastCache = new Map()
-
-function forecastCacheKey(lat, lon, start, end) {
-  return `${Number(lat).toFixed(4)}|${Number(lon).toFixed(4)}|${start}|${end}`
-}
-
-function getCachedForecast(key) {
-  const e = forecastCache.get(key)
-  if (!e) return null
-  if (Date.now() - e.t > FORECAST_CACHE_TTL_MS) {
-    forecastCache.delete(key)
-    return null
-  }
-  return e.data
-}
-
-function setCachedForecast(key, data) {
-  forecastCache.set(key, { data, t: Date.now() })
-}
-
 /**
- * 일별 예보 Open-Meteo (200이어도 body에 error:true 인 경우 있음)
- * @see https://open-meteo.com/en/docs
- */
-async function fetchOpenMeteoDailyForecast(lat, lon, startDate, endDate) {
-  const buildUrl = (dailyVars) => {
-    const u = new URL('https://api.open-meteo.com/v1/forecast')
-    u.searchParams.set('latitude', String(lat))
-    u.searchParams.set('longitude', String(lon))
-    u.searchParams.set('timezone', 'Asia/Seoul')
-    u.searchParams.set('start_date', startDate)
-    u.searchParams.set('end_date', endDate)
-    u.searchParams.set('daily', dailyVars)
-    return u.toString()
-  }
-
-  const tryFetch = async (dailyVars) => {
-    const controller = new AbortController()
-    const t = setTimeout(() => controller.abort(), 20000)
-    try {
-      const res = await fetch(buildUrl(dailyVars), { signal: controller.signal })
-      const j = await res.json()
-      if (j?.error) return null
-      if (!res.ok) return null
-      return j
-    } catch {
-      return null
-    } finally {
-      clearTimeout(t)
-    }
-  }
-
-  const full = 'weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
-  const minimal = 'weathercode,temperature_2m_max,temperature_2m_min'
-  let data = await tryFetch(full)
-  if (!data) data = await tryFetch(minimal)
-  if (!data) throw new Error('forecast')
-  return data
-}
-
-/**
- * @param {null | { date: string, placeName?: string, placeAddress?: string }} nextExpedition
+ * D-day~D-3: place_weather_daily 조회. 캐시가 비어 있으면 refresh-place-weather Edge로 즉시 갱신.
+ * @param {null | { date, placeId?, placeName?, placeAddress? }} nextExpedition
  */
 export function useExpeditionWeather(nextExpedition) {
   const [state, setState] = useState({
@@ -117,50 +56,88 @@ export function useExpeditionWeather(nextExpedition) {
       return
     }
 
-    const placeName = nextExpedition.placeName ?? ''
-    const placeAddress = nextExpedition.placeAddress ?? ''
-    if (!placeName && !placeAddress) {
-      setState({ loading: false, error: 'no_address', days: [] })
+    if (!nextExpedition.placeId) {
+      setState({ loading: false, error: 'no_place', days: [] })
       return
     }
 
     const id = ++seq.current
     setState((s) => ({ ...s, loading: true, error: null, days: [] }))
 
+    const runSelect = () =>
+      supabase
+        .from('place_weather_daily')
+        .select('forecast_date, weathercode, tmin, tmax, precip_prob, fetched_at')
+        .eq('place_id', nextExpedition.placeId)
+        .gte('forecast_date', start)
+        .lte('forecast_date', end)
+        .order('forecast_date', { ascending: true })
+
+    const mapRows = (rows) =>
+      (rows ?? []).map((r) => ({
+        date: r.forecast_date,
+        code: r.weathercode,
+        label: weathercodeLabel(r.weathercode),
+        icon: weathercodeIcon(r.weathercode),
+        tmax: r.tmax,
+        tmin: r.tmin,
+        precipProb: r.precip_prob,
+      }))
+
     try {
-      const pos = await geocodePlaceToLatLon(placeName, placeAddress)
+      const { data: rows, error: qe } = await runSelect()
+
       if (id !== seq.current) return
-      if (!pos || pos.lat == null || pos.lon == null) {
-        setState({ loading: false, error: 'geocode', days: [] })
+      if (qe) {
+        setState({ loading: false, error: 'db', days: [] })
         return
       }
-      const lat = pos.lat
-      const lon = pos.lon
-      const fcKey = forecastCacheKey(lat, lon, start, end)
-      let data = getCachedForecast(fcKey)
-      if (!data) {
-        data = await fetchOpenMeteoDailyForecast(lat, lon, start, end)
-        if (data) setCachedForecast(fcKey, data)
+
+      let list = mapRows(rows)
+
+      if (list.length === 0) {
+        const { data: inv, error: invErr, response: fnRes } = await supabase.functions.invoke(
+          'refresh-place-weather',
+          { body: { place_id: nextExpedition.placeId } }
+        )
+        if (id !== seq.current) return
+        if (invErr) {
+          let reason
+          if (fnRes) {
+            try {
+              const j = await fnRes.json()
+              if (j && j.ok === false) reason = j.reason
+            } catch {
+              /* ignore */
+            }
+          }
+          if (reason === 'geocode' || reason === 'forecast') {
+            setState({ loading: false, error: 'no_weather', days: [] })
+          } else {
+            setState({ loading: false, error: 'refresh', days: [] })
+          }
+          return
+        }
+        if (inv && inv.ok === false) {
+          setState({ loading: false, error: 'no_weather', days: [] })
+          return
+        }
+        const { data: rows2, error: qe2 } = await runSelect()
+        if (id !== seq.current) return
+        if (qe2) {
+          setState({ loading: false, error: 'db', days: [] })
+          return
+        }
+        list = mapRows(rows2)
+        if (list.length === 0) {
+          setState({ loading: false, error: 'no_weather', days: [] })
+          return
+        }
       }
-      if (id !== seq.current) return
-      const times = data?.daily?.time ?? []
-      const codes = data?.daily?.weathercode ?? []
-      const tmax = data?.daily?.temperature_2m_max ?? []
-      const tmin = data?.daily?.temperature_2m_min ?? []
-      const pprob = data?.daily?.precipitation_probability_max ?? []
-      const days = times.map((t, i) => ({
-        date: t,
-        code: codes[i],
-        label: weathercodeLabel(codes[i]),
-        icon: weathercodeIcon(codes[i]),
-        tmax: tmax[i] != null ? Math.round(tmax[i]) : null,
-        tmin: tmin[i] != null ? Math.round(tmin[i]) : null,
-        precipProb: pprob[i] != null ? Math.round(pprob[i]) : null,
-      }))
-      setState({ loading: false, error: null, days })
+      setState({ loading: false, error: null, days: list })
     } catch (e) {
       if (id !== seq.current) return
-      setState({ loading: false, error: 'fetch', days: [] })
+      setState({ loading: false, error: 'db', days: [] })
     }
   }, [nextExpedition])
 
