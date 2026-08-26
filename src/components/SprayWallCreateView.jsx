@@ -125,11 +125,22 @@ function getCanvasCoords(e, canvasRef) {
   return { x, y }
 }
 
-export default function SprayWallCreateView({ problemType, onSave, onBack }) {
-  const [imageDataUrl, setImageDataUrl] = useState(null)
+export default function SprayWallCreateView({ problemType, initialProblem, defaultImageData, onSave, onBack, backLabel }) {
+  const isEditMode = Boolean(initialProblem?.id)
+  const resolvedType = isEditMode ? initialProblem.type : problemType
+
+  const [imageDataUrl, setImageDataUrl] = useState(() => {
+    if (initialProblem) {
+      return initialProblem.base_image_data || initialProblem.image_data || null
+    }
+    return defaultImageData ?? null
+  })
   const [imageReady, setImageReady] = useState(false)
-  const [borders, setBorders] = useState([])
-  const [problemName, setProblemName] = useState('')
+  const [borders, setBorders] = useState(() => {
+    if (!initialProblem?.borders) return []
+    return Array.isArray(initialProblem.borders) ? [...initialProblem.borders] : []
+  })
+  const [problemName, setProblemName] = useState(initialProblem?.name ?? '')
   const [saving, setSaving] = useState(false)
   const canvasRef = useRef(null)
   const imageRef = useRef(null)
@@ -178,7 +189,7 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
           ctx.closePath()
         }
         ctx.stroke()
-        if (problemType === 'endurance' && b.numbers?.length) {
+        if (resolvedType === 'endurance' && b.numbers?.length) {
           const fs = Math.max(14, Math.min(28, (b.width || b.radius * 2) * 0.25))
           ctx.fillStyle = '#FF0000'
           ctx.font = `bold ${fs}px Arial`
@@ -192,7 +203,7 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
         }
       })
     },
-    [problemType]
+    [resolvedType]
   )
 
   useEffect(() => {
@@ -242,7 +253,7 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
     (x, y, clickCount) => {
       const canvas = canvasRef.current
       const ctx = canvas?.getContext('2d')
-      if (!canvas || !ctx || !problemType) return
+      if (!canvas || !ctx || !resolvedType) return
 
       setBorders((prev) => {
         const idx = findBorderAtPoint(prev, x, y)
@@ -261,7 +272,7 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
             if (regArea > area * 0.1) return prev
             const newB = {
               ...region,
-              numbers: problemType === 'endurance' ? [getNextNumFromBorders(prev)] : undefined,
+              numbers: resolvedType === 'endurance' ? [getNextNumFromBorders(prev)] : undefined,
             }
             return [...prev, newB]
           }
@@ -271,13 +282,13 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
             centerY: y,
             radius: 30,
             color: '#FF0000',
-            numbers: problemType === 'endurance' ? [getNextNumFromBorders(prev)] : undefined,
+            numbers: resolvedType === 'endurance' ? [getNextNumFromBorders(prev)] : undefined,
           }
           return [...prev, newB]
         }
 
         const b = prev[idx]
-        if (problemType === 'bouldering') {
+        if (resolvedType === 'bouldering') {
           if (clickCount === 1) {
             return prev.map((p, i) =>
               i === idx ? { ...p, color: '#FF0000' } : p
@@ -308,24 +319,24 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
         return prev
       })
     },
-    [problemType, getNextNumFromBorders]
+    [resolvedType, getNextNumFromBorders]
   )
 
   const handleLongPress = useCallback(
     (idx) => {
       setBorders((prev) => {
-        if (problemType === 'bouldering') {
+        if (resolvedType === 'bouldering') {
           return prev.filter((_, i) => i !== idx)
         }
         const b = prev[idx]
-        if (problemType !== 'endurance' || !b?.numbers?.length) return prev
+        if (resolvedType !== 'endurance' || !b?.numbers?.length) return prev
         const nums = [...b.numbers]
         nums.pop()
         if (nums.length === 0) return prev.filter((_, i) => i !== idx)
         return prev.map((p, i) => (i === idx ? { ...p, numbers: nums } : p))
       })
     },
-    [problemType]
+    [resolvedType]
   )
 
   const handlePointerDown = useCallback(
@@ -341,7 +352,7 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
 
       pointerDownRef.current = { x: pos.x, y: pos.y, time: Date.now(), idx }
 
-      if (isOnBorder && (problemType === 'bouldering' || problemType === 'endurance')) {
+      if (isOnBorder && (resolvedType === 'bouldering' || resolvedType === 'endurance')) {
         longPressTimerRef.current = setTimeout(() => {
           longPressFiredRef.current = true
           clearTimeout(clickTimerRef.current)
@@ -351,7 +362,7 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
         }, LONG_PRESS_MS)
       }
     },
-    [borders, problemType, handleLongPress]
+    [borders, resolvedType, handleLongPress]
   )
 
   const handlePointerUp = useCallback(
@@ -422,7 +433,14 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
       return
     }
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || !imageRef.current) return
+
+    const baseCanvas = document.createElement('canvas')
+    baseCanvas.width = canvas.width
+    baseCanvas.height = canvas.height
+    const baseCtx = baseCanvas.getContext('2d')
+    baseCtx.drawImage(imageRef.current, 0, 0, baseCanvas.width, baseCanvas.height)
+    const baseImageData = baseCanvas.toDataURL('image/png')
 
     const finalCanvas = document.createElement('canvas')
     finalCanvas.width = canvas.width
@@ -453,7 +471,7 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
         ctx.closePath()
       }
       ctx.stroke()
-      if (problemType === 'endurance' && b.numbers?.length) {
+      if (resolvedType === 'endurance' && b.numbers?.length) {
         const fs = Math.max(14, Math.min(28, (b.width || b.radius * 2) * 0.25))
         ctx.fillStyle = '#FF0000'
         ctx.font = `bold ${fs}px Arial`
@@ -469,27 +487,44 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
 
     setSaving(true)
     try {
-      await onSave(
-        problemName.trim(),
-        problemType,
-        finalCanvas.toDataURL('image/png')
-      )
+      await onSave({
+        name: problemName.trim(),
+        type: resolvedType,
+        imageData: finalCanvas.toDataURL('image/png'),
+        baseImageData,
+        borders,
+      })
     } finally {
       setSaving(false)
     }
-  }, [imageReady, problemName, problemType, borders, onSave])
+  }, [imageReady, problemName, resolvedType, borders, onSave])
 
 
-  const typeLabel = problemType === 'bouldering' ? '볼더링' : '지구력'
+  const typeLabel = resolvedType === 'bouldering' ? '볼더링' : '지구력'
+  const resolvedBackLabel = backLabel ?? (isEditMode ? '← 갤러리' : '← 타입 선택')
 
   return (
     <div className="spray-wall-create">
       <div className="spray-wall-create__header">
         <button type="button" className="spray-wall__back" onClick={onBack}>
-          ← 타입 선택
+          {resolvedBackLabel}
         </button>
-        <span className="spray-wall-create__type-badge">{typeLabel}</span>
+        <span className="spray-wall-create__type-badge">
+          {isEditMode ? `문제 수정 · ${typeLabel}` : typeLabel}
+        </span>
       </div>
+
+      {isEditMode && !initialProblem?.base_image_data && (
+        <p className="spray-wall-create__legacy-notice">
+          이전에 저장된 문제입니다. 홀드를 수정하려면 원본 사진을 다시 업로드해 주세요.
+        </p>
+      )}
+
+      {!isEditMode && defaultImageData && imageDataUrl === defaultImageData && (
+        <p className="spray-wall-create__default-notice">
+          팀 스프레이월 이미지가 적용되었습니다. 다른 사진을 쓰려면 아래에서 다시 선택하세요.
+        </p>
+      )}
 
       <div className="spray-wall-create__area">
         {!imageDataUrl ? (
@@ -550,12 +585,12 @@ export default function SprayWallCreateView({ problemType, onSave, onBack }) {
           onClick={handleSave}
           disabled={saving || !imageReady}
         >
-          {saving ? '저장 중...' : '저장'}
+          {saving ? '저장 중...' : isEditMode ? '수정 저장' : '저장'}
         </button>
       </div>
 
       <p className="spray-wall-create__hint">
-        {problemType === 'bouldering'
+        {resolvedType === 'bouldering'
           ? '볼더링: 클릭→빨강, 더블클릭→초록, 트리플클릭→파랑, 길게누르기→삭제'
           : '지구력: 클릭→홀드 추가, 더블클릭→순서 추가, 길게누르기→숫자 제거'}
       </p>

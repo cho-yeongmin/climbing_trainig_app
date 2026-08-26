@@ -177,6 +177,7 @@ html.is-landscape-2col .spray-wall-gallery__grid {
 
 .spray-wall-gallery__modal-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.75rem;
 }
@@ -193,8 +194,23 @@ html.is-landscape-2col .spray-wall-gallery__grid {
   transition: background 0.2s, color 0.2s;
 }
 
-.spray-wall-gallery__action-btn:hover {
+.spray-wall-gallery__action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spray-wall-gallery__action-btn:hover:not(:disabled) {
   background: #4285f4;
+  color: #fff;
+}
+
+.spray-wall-gallery__action-btn--primary {
+  color: #fff;
+  background: #4285f4;
+}
+
+.spray-wall-gallery__action-btn--primary:hover:not(:disabled) {
+  background: #3367d6;
   color: #fff;
 }
 
@@ -203,7 +219,7 @@ html.is-landscape-2col .spray-wall-gallery__grid {
   border-color: #d93025;
 }
 
-.spray-wall-gallery__action-btn--danger:hover {
+.spray-wall-gallery__action-btn--danger:hover:not(:disabled) {
   background: #d93025;
   color: #fff;
 }

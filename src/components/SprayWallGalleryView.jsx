@@ -11,7 +11,7 @@ const GALLERY_TITLES = {
   endurance: '지구력 갤러리',
 }
 
-export default function SprayWallGalleryView({ userId, teamId, galleryType, onBack }) {
+export default function SprayWallGalleryView({ userId, teamId, galleryType, onBack, onEdit, editLoading }) {
   const { data: problems, loading, refetch } = useSprayWallProblems(teamId, userId, galleryType)
   const [modalIndex, setModalIndex] = useState(-1)
   const [tagEditId, setTagEditId] = useState(null)
@@ -187,6 +187,16 @@ export default function SprayWallGalleryView({ userId, teamId, galleryType, onBa
             </div>
             {(currentModalProblem.user_id === userId) && (
               <div className="spray-wall-gallery__modal-actions">
+                {onEdit && (
+                  <button
+                    type="button"
+                    className="spray-wall-gallery__action-btn spray-wall-gallery__action-btn--primary"
+                    onClick={() => onEdit(currentModalProblem)}
+                    disabled={editLoading}
+                  >
+                    {editLoading ? '불러오는 중...' : '문제 수정'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="spray-wall-gallery__action-btn"

@@ -1,0 +1,127 @@
+.team-spray-wall {
+  margin-top: 0.25rem;
+}
+
+.team-spray-wall__header {
+  margin-bottom: 1rem;
+}
+
+.team-spray-wall__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.team-spray-wall__desc {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: #5f6368;
+  line-height: 1.5;
+}
+
+.team-spray-wall__empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  font-size: 0.9375rem;
+  color: #5f6368;
+  text-align: center;
+}
+
+.team-spray-wall__file {
+  display: none;
+}
+
+.team-spray-wall__upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 160px;
+  padding: 2rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: #5f6368;
+  background: #f8f9fa;
+  border: 2px dashed #dadce0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.team-spray-wall__upload-btn:hover {
+  background: #eef1f4;
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+.team-spray-wall__preview-wrap {
+  margin-bottom: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.team-spray-wall__preview {
+  display: block;
+  max-width: 100%;
+  max-height: 50vh;
+  margin: 0 auto;
+}
+
+.team-spray-wall__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.team-spray-wall__btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.team-spray-wall__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.team-spray-wall__btn--primary {
+  color: #fff;
+  background: #4285f4;
+  border: none;
+}
+
+.team-spray-wall__btn--primary:hover:not(:disabled) {
+  background: #3367d6;
+}
+
+.team-spray-wall__btn--secondary {
+  color: #4285f4;
+  background: #fff;
+  border: 1px solid #4285f4;
+}
+
+.team-spray-wall__btn--secondary:hover:not(:disabled) {
+  background: #e8f0fe;
+}
+
+.spray-wall-card--team-wall {
+  border-color: #e8f0fe;
+  background: linear-gradient(135deg, #fff 0%, #f8fbff 100%);
+}
+
+.spray-wall-card--team-wall .spray-wall-card__sub--registered {
+  color: #188038;
+}
+
+.spray-wall-card--team-wall .spray-wall-card__sub--pending {
+  color: #b06000;
+}

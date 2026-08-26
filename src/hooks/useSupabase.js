@@ -1163,7 +1163,21 @@ export function useSprayWallProblems(teamId, userId, type = null) {
   return { data, loading, refetch }
 }
 
-export async function saveSprayWallProblem({ userId, teamId, name, type, imageData, tags = [] }) {
+export async function fetchSprayWallProblemById(problemId) {
+  const { data, error } = await supabase
+    .from('spray_wall_problems')
+    .select('id, name, type, image_data, base_image_data, borders, tags, created_at, user_id')
+    .eq('id', problemId)
+    .single()
+  if (error) throw error
+  return {
+    ...data,
+    tags: Array.isArray(data.tags) ? data.tags : (data.tags ? JSON.parse(data.tags || '[]') : []),
+    borders: Array.isArray(data.borders) ? data.borders : (data.borders ? JSON.parse(data.borders || '[]') : []),
+  }
+}
+
+export async function saveSprayWallProblem({ userId, teamId, name, type, imageData, baseImageData, borders = [], tags = [] }) {
   const { data, error } = await supabase
     .from('spray_wall_problems')
     .insert({
@@ -1172,9 +1186,28 @@ export async function saveSprayWallProblem({ userId, teamId, name, type, imageDa
       name: name.trim(),
       type,
       image_data: imageData,
+      base_image_data: baseImageData ?? null,
+      borders: Array.isArray(borders) ? borders : [],
       tags: Array.isArray(tags) ? tags : [],
       updated_at: new Date().toISOString(),
     })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateSprayWallProblem(problemId, { name, imageData, baseImageData, borders = [] }) {
+  const { data, error } = await supabase
+    .from('spray_wall_problems')
+    .update({
+      name: name.trim(),
+      image_data: imageData,
+      base_image_data: baseImageData ?? null,
+      borders: Array.isArray(borders) ? borders : [],
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', problemId)
     .select()
     .single()
   if (error) throw error
@@ -1201,4 +1234,69 @@ export async function deleteSprayWallProblem(problemId) {
     .delete()
     .eq('id', problemId)
   if (error) throw error
+}
+
+// 팀 스프레이월 배경 (팀당 1장)
+
+export function useTeamSprayWall(teamId) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const refetch = useCallback(() => {
+    if (!teamId) {
+      setData(null)
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    supabase
+      .from('team_spray_wall')
+      .select('id, team_id, image_data, uploaded_by, created_at, updated_at')
+      .eq('team_id', teamId)
+      .maybeSingle()
+      .then(({ data: row, error }) => {
+        if (error) {
+          console.error('team spray wall fetch error:', error)
+          setData(null)
+        } else {
+          setData(row ?? null)
+        }
+        setLoading(false)
+      })
+  }, [teamId])
+
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+
+  return { data, loading, refetch }
+}
+
+export async function createTeamSprayWall({ teamId, userId, imageData }) {
+  const { data, error } = await supabase
+    .from('team_spray_wall')
+    .insert({
+      team_id: teamId,
+      uploaded_by: userId,
+      image_data: imageData,
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateTeamSprayWall(teamId, imageData) {
+  const { data, error } = await supabase
+    .from('team_spray_wall')
+    .update({
+      image_data: imageData,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('team_id', teamId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
 }
